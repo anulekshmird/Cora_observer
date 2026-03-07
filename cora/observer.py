@@ -360,6 +360,7 @@ class Observer:
 
     def stream_chat_with_screen(self, user_query, attachment=None, proactive_context=None):
         self.stop_flag = False
+        mode_primary = "general" # Default initialization
         try:
             image_bytes = None
             current_images = []

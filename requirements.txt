@@ -7,3 +7,9 @@ ollama
 keyboard
 SpeechRecognition
 pyaudio
+pyautogui
+pygetwindow
+pypdf
+opencv-python
+pytesseract
+pdf2image

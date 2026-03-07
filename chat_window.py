@@ -2,6 +2,7 @@
 import sys
 import os
 import datetime
+import base64
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QSize, QTimer, QPropertyAnimation, QEasingCurve, QPoint
 from PyQt6.QtGui import QFont, QIcon, QTextCursor, QColor, QAction, QPainter, QBrush, QLinearGradient, QPalette
 from PyQt6.QtWidgets import (
@@ -10,6 +11,7 @@ from PyQt6.QtWidgets import (
     QFileDialog, QMessageBox, QScrollArea, QListWidgetItem, QMenu,
     QGraphicsDropShadowEffect, QSizePolicy
 )
+import formatter
 
 try:
     import speech_recognition as sr
@@ -67,8 +69,23 @@ class MessageBubble(QFrame):
         
     def setup_ui(self):
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 5, 20, 5)
+        layout.setContentsMargins(0, 5, 0, 5)
+        layout.setSpacing(10)
         
+        # AI Avatar
+        if not self.is_user:
+            self.avatar_label = QLabel("🤖")
+            self.avatar_label.setFixedSize(32, 32)
+            self.avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.avatar_label.setStyleSheet("""
+                background-color: #334155;
+                color: white;
+                border-radius: 16px;
+                font-size: 16px;
+                margin-right: 5px;
+            """)
+            layout.addWidget(self.avatar_label, 0, Qt.AlignmentFlag.AlignTop)
+
         # Spacer for alignment
         if self.is_user:
             layout.addStretch()
@@ -77,15 +94,16 @@ class MessageBubble(QFrame):
         self.bubble_container = QFrame()
         self.bubble_container.setObjectName("bubbleContainer")
         bubble_layout = QVBoxLayout(self.bubble_container)
-        bubble_layout.setContentsMargins(12, 8, 12, 8)
-        bubble_layout.setSpacing(4)
+        bubble_layout.setContentsMargins(16, 12, 16, 12)
+        bubble_layout.setSpacing(6)
         
         # Message text
         self.msg_label = QLabel(self.text)
         self.msg_label.setWordWrap(True)
-        self.msg_label.setTextFormat(Qt.TextFormat.MarkdownText) # Enable Markdown/RichText
-        self.msg_label.setOpenExternalLinks(True)
-        self.msg_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.msg_label.setTextFormat(Qt.TextFormat.RichText) # Changed from MarkdownText to RichText for styled HTML
+        self.msg_label.setOpenExternalLinks(False)
+        self.msg_label.linkActivated.connect(self.handle_link)
+        self.msg_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse)
         
         # Timestamp
         time_label = QLabel(self.timestamp)
@@ -97,8 +115,8 @@ class MessageBubble(QFrame):
         
         # Add shadow effect
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(10)
-        shadow.setColor(QColor(0, 0, 0, 30))
+        shadow.setBlurRadius(15)
+        shadow.setColor(QColor(0, 0, 0, 40))
         shadow.setOffset(0, 2)
         self.bubble_container.setGraphicsEffect(shadow)
         
@@ -108,9 +126,25 @@ class MessageBubble(QFrame):
             layout.addStretch()
             
         # Set maximum width for bubble
-        self.bubble_container.setMaximumWidth(600)
+        self.bubble_container.setMaximumWidth(780)
         self.bubble_container.setMinimumWidth(100)
         
+    def handle_link(self, link):
+        if link.startswith("copy:"):
+            try:
+                b64_data = link.split("copy:")[1]
+                command = base64.b64decode(b64_data).decode()
+                clipboard = QApplication.clipboard()
+                clipboard.setText(command)
+                print(f"Copied to clipboard: {command}")
+                
+                 # Visual feedback: Find the parent ChatWindow and show feedback
+                main_win = self.window()
+                if hasattr(main_win, 'show_copy_feedback'):
+                    main_win.show_copy_feedback()
+            except Exception as e:
+                print(f"Copy failed: {e}")
+
     def apply_styles(self):
         if self.is_user:
             self.setStyleSheet("""
@@ -185,9 +219,10 @@ class ChatDisplay(QScrollArea):
         self.container = QWidget()
         self.container.setStyleSheet("background-color: #0F172A;")
         self.layout = QVBoxLayout(self.container)
+        self.layout.setContentsMargins(40, 25, 40, 10)
+        self.layout.setSpacing(10)
         self.layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.layout.setSpacing(15)
-        self.layout.setContentsMargins(20, 20, 20, 20)
+        self.layout.addStretch() # Ensure messages align to top
         
         self.setWidget(self.container)
         
@@ -208,19 +243,20 @@ class ChatDisplay(QScrollArea):
     def add_message(self, text, is_user=False):
         # Remove welcome message if it exists
         if hasattr(self, 'welcome_label') and self.welcome_label.isVisible():
-             self.welcome_label.setVisible(False) # Just hide it, don't delete to avoid layout shift issues if cleared later
+             self.welcome_label.setVisible(False)
         
         bubble = MessageBubble(text, is_user)
-        self.layout.addWidget(bubble)
+        # Insert before the stretch at index cnt-1
+        self.layout.insertWidget(self.layout.count() - 1, bubble)
         
         # Scroll to bottom
         QTimer.singleShot(50, self.scroll_to_bottom)
     
     def get_last_bubble(self):
-        # Return the last MessageBubble in the layout
+        # Return the last MessageBubble (skip the stretch at end)
         cnt = self.layout.count()
-        if cnt > 0:
-            item = self.layout.itemAt(cnt - 1)
+        if cnt > 1: # Layout has stretch at end
+            item = self.layout.itemAt(cnt - 2)
             if item.widget() and isinstance(item.widget(), MessageBubble):
                 return item.widget()
         return None
@@ -300,11 +336,11 @@ class ModernInputArea(QFrame):
         self.attach_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.attach_btn.clicked.connect(self.attach_file)
         
-        # Text input
+        # Text area
         self.input_field = QTextEdit()
-        self.input_field.setPlaceholderText("Type your message...")
-        self.input_field.setMaximumHeight(120)
-        self.input_field.setMinimumHeight(50)
+        self.input_field.setPlaceholderText("Message Cora AI...")
+        self.input_field.setMaximumHeight(70) # Reduced from 120
+        self.input_field.setMinimumHeight(45) # Adjusted from 50
         self.input_field.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.input_field.installEventFilter(self) # Install filter to catch Enter
         
@@ -317,7 +353,7 @@ class ModernInputArea(QFrame):
         # Send button
         self.send_btn = QPushButton("➤")
         self.send_btn.setObjectName("sendBtn")
-        self.send_btn.setFixedSize(50, 40)
+        self.send_btn.setFixedSize(40, 40) # Circular 40x40
         self.send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.send_btn.clicked.connect(self.send_message)
         
@@ -343,9 +379,9 @@ class ModernInputArea(QFrame):
             }
             QFrame#inputContainer {
                 background-color: #1E293B;
-                border-radius: 12px;
+                border-radius: 24px;
                 border: 1px solid #334155;
-                margin: 0px 10px 10px 10px;
+                margin: 0px 40px 15px 40px;
             }
             QFrame#chipContent {
                 background-color: #1E293B;
@@ -410,11 +446,12 @@ class ModernInputArea(QFrame):
              return
 
         text = self.input_field.toPlainText().strip()
-        if text or self.current_attachment:
-            self.message_sent.emit(text, self.current_attachment)
+        attachment = self.current_attachment
+        if text or attachment:
+            self.message_sent.emit(text, attachment)
             self.input_field.clear()
             self.remove_attachment()
-            
+        
     def eventFilter(self, obj, event):
         if obj == self.input_field and event.type() == event.Type.KeyPress:
              if event.key() == Qt.Key.Key_Return and not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
@@ -477,6 +514,24 @@ class ChatWindow(QMainWindow):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
         
+        # Header Area for Mode Indicator
+        header = QFrame()
+        header.setFixedHeight(50)
+        header.setStyleSheet("background-color: #1E293B; border-bottom: 1px solid #334155;")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(20, 0, 20, 0)
+        
+        self.mode_label = QLabel("Cora AI Assistant")
+        self.mode_label.setStyleSheet("color: white; font-size: 16px; font-weight: bold;")
+        
+        self.copy_feedback = QLabel("Copied!")
+        self.copy_feedback.setStyleSheet("color: #10B981; font-weight: bold; background: #064E3B; border-radius: 4px; padding: 2px 8px;")
+        self.copy_feedback.setVisible(False)
+        
+        header_layout.addWidget(self.mode_label)
+        header_layout.addStretch()
+        header_layout.addWidget(self.copy_feedback)
+        
         # Chat display
         self.chat_display = ChatDisplay()
         
@@ -485,8 +540,9 @@ class ChatWindow(QMainWindow):
         self.input_area.message_sent.connect(self.handle_send)
         self.input_area.voice_btn.clicked.connect(self.toggle_voice)
         
-        content_layout.addWidget(self.chat_display)
-        content_layout.addWidget(self.input_area)
+        content_layout.addWidget(header)
+        content_layout.addWidget(self.chat_display, 1) # Added stretch
+        content_layout.addWidget(self.input_area, 0)   # Fixed height
         
         # Add to main layout
         # Add to main layout
@@ -527,19 +583,27 @@ class ChatWindow(QMainWindow):
         
     def set_generating_state(self, is_generating):
         self.is_generating = is_generating
+        
+        # Update Input UI based on vision keywords presence
+        text = self.input_area.input_field.toPlainText().lower()
+        vision_keywords = ["look", "see", "screen", "visual", "watch", "what is this", "screenshot", "observe", "check", "debug", "fix"]
+        is_vision = any(k in text for k in vision_keywords)
+        
         if is_generating:
-            self.input_area.send_btn.setText("⏹")
-            self.input_area.send_btn.setStyleSheet("""
-                QPushButton#sendBtn {
+            btn_text = "⏹"
+            status_style = "border: 1px solid #EF4444;" if is_vision else "border: 1px solid #2563EB;"
+            self.input_area.send_btn.setText(btn_text)
+            self.input_area.send_btn.setStyleSheet(f"""
+                QPushButton#sendBtn {{
                     background-color: #EF4444;
                     color: white;
                     font-size: 18px;
                     font-weight: bold;
                     border-radius: 20px;
-                }
-                QPushButton#sendBtn:hover {
+                }}
+                QPushButton#sendBtn:hover {{
                     background-color: #DC2626;
-                }
+                }}
             """)
         else:
             self.input_area.send_btn.setText("➤")
@@ -547,7 +611,7 @@ class ChatWindow(QMainWindow):
                 QPushButton#sendBtn {
                     background-color: #2563EB;
                     color: white;
-                    font-size: 18px;
+                    font-size: 16px;
                     font-weight: bold;
                     border-radius: 20px;
                 }
@@ -557,6 +621,22 @@ class ChatWindow(QMainWindow):
             """)
         QApplication.processEvents()
             
+    def show_copy_feedback(self):
+        self.copy_feedback.setVisible(True)
+        QTimer.singleShot(2000, lambda: self.copy_feedback.setVisible(False))
+        
+    def update_mode_indicator(self, mode):
+        emoji_map = {
+            "browser": "🌐 Browser",
+            "document": "📄 Doc",
+            "spreadsheet": "📊 Sheet",
+            "developer": "💻 Dev",
+            "terminal": "🐚 Terminal",
+            "general": "🤖 General"
+        }
+        text = emoji_map.get(mode, f"Mode: {mode.capitalize()}")
+        self.mode_label.setText(text)
+
     def on_ai_response_start(self, initial_text):
         # Start a new bubble for Cora
         self.chat_display.add_message(initial_text, is_user=False)
@@ -566,18 +646,31 @@ class ChatWindow(QMainWindow):
         try:
             # Check if bubble object is still valid C++ side
             if hasattr(self, 'current_response_bubble') and self.current_response_bubble:
-                # Double check with internal Qt test if easy, or rely on try/catch
+                # Collect full text for formatting
+                if not hasattr(self, '_stream_buffer'):
+                    self._stream_buffer = ""
+                
+                self._stream_buffer += text
+                
+                # Format the full buffer
+                formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
+                
                 lbl = self.current_response_bubble.msg_label
-                current_text = lbl.text()
-                lbl.setText(current_text + text)
+                lbl.setText(formatted_text)
                 self.chat_display.scroll_to_bottom()
             else:
                 # Fallback: Try to get last bubble if it's not user
                 last = self.chat_display.get_last_bubble()
                 if last and not last.is_user:
                     self.current_response_bubble = last
-                    lbl = last.msg_label
-                    lbl.setText(lbl.text() + text)
+                    if not hasattr(self, '_stream_buffer'):
+                         # Attempt to reconstruct buffer from label text if possible, or just start fresh
+                         # For safety, let's just start fresh or use the label's plaintext if we can
+                         self._stream_buffer = last.msg_label.text()
+                    
+                    self._stream_buffer += text
+                    formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
+                    last.msg_label.setText(formatted_text)
                     self.chat_display.scroll_to_bottom()
         except RuntimeError:
             # Widget deleted (likely session switch), ignore stream
@@ -588,6 +681,7 @@ class ChatWindow(QMainWindow):
     def finish_response(self):
         self.set_generating_state(False)
         self.current_response_bubble = None
+        self._stream_buffer = "" # Clear buffer for next message
         
     # --- Integration Methods for Main.py ---
     

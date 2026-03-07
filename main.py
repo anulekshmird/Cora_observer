@@ -160,6 +160,10 @@ class CoraApp:
             self.chat_win.activateWindow()
             self.chat_win.raise_()
             
+            # Update Mode Indicator
+            ctx = self.observer.context_engine.get_context_snapshot()
+            self.chat_win.update_mode_indicator(ctx.get('mode_primary', 'general'))
+            
             # Welcome Message Logic (Handled internally by ChatDisplay)
             pass
 

@@ -32,6 +32,12 @@ class ProactiveBubble(QWidget):
         self.is_read_more_expanded = False # Track "Read more" state
         self.orb_state = self.STATE_IDLE
         
+        # Suggestion Lifecycle Timers
+        self.hide_timer = QTimer(self)
+        self.hide_timer.setSingleShot(True)
+        self.hide_timer.timeout.connect(self.fade_out)
+        self.is_hovered = False
+        
         # Determine Screen Position (Bottom Right)
         self.screen_geo = QApplication.primaryScreen().availableGeometry()
         self.bubble_size = 70
@@ -206,6 +212,23 @@ class ProactiveBubble(QWidget):
 
     def mouseReleaseEvent(self, event):
         self._drag_pos = None
+
+    def enterEvent(self, event):
+        """Pause hide timer on hover."""
+        self.is_hovered = True
+        if self.hide_timer.isActive():
+            self.hide_timer.stop()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        """Resume hide timer on leave (if suggestion still active)."""
+        self.is_hovered = False
+        if self.current_data:
+            suggestion_type = self.current_data.get('type', 'general')
+            if suggestion_type != 'syntax_error':
+                # Resume with appropriate remaining time (fallback to 3s)
+                self.hide_timer.start(3000)
+        super().leaveEvent(event)
     
     # =====================================================================
     # ORB STATE MACHINE
@@ -499,8 +522,14 @@ class ProactiveBubble(QWidget):
             # Default: Dismiss + Main Action
             self.dynamic_btns_layout.addWidget(self.dismiss_btn)
             self.dynamic_btns_layout.addWidget(self.action_btn)
-            self.dismiss_btn.show()
-            self.action_btn.show()
+            
+            # HIDE "View" if it's just the generic ready state message
+            if "observing your activity" in reason.lower():
+                self.action_btn.hide()
+                self.dismiss_btn.show()
+            else:
+                self.dismiss_btn.show()
+                self.action_btn.show()
 
         print("DEBUG: Showing Suggestion Bubble!")
         self.update_layout_pos()
@@ -514,6 +543,14 @@ class ProactiveBubble(QWidget):
             self.anim.setStartValue(0.0)
             self.anim.setEndValue(1.0)
             self.anim.start()
+
+        # Start lifecycle timer (Section 2.1)
+        if suggestion_type == 'syntax_error':
+            self.hide_timer.stop() # Errors stay visible (persistent)
+        elif suggestion_type == 'message':
+            self.hide_timer.start(5000) # Presence: 5s
+        else:
+            self.hide_timer.start(10000) # Normal Suggestion: 10s (Updated from 8s)
 
     # =====================================================================
     # ACTION CHIP BUILDERS
@@ -663,7 +700,8 @@ class ProactiveBubble(QWidget):
 
     def on_dismiss(self):
         self.dismissed.emit()
-        self.hide_bubble()
+        self.hide_timer.stop() # Ensure timer is killed
+        self.fade_out(force=True)
 
     def enter_idle_mode(self):
         """Collapses the bubble to a passive, non-intrusive state."""
@@ -673,11 +711,29 @@ class ProactiveBubble(QWidget):
         self.panel.hide()
         self._set_orb_state(self.STATE_IDLE)
         self.update_layout_pos()
-        self.show()
+        self.show() # Keep orb visible
         
     def hide_bubble(self):
-        # FIX 9: Proper state transition on hide
+        self.fade_out(force=True)
+
+    def fade_out(self, force=False):
+        """Smoothly fade out before hiding/collapsing."""
+        if self.is_hovered and not force:
+            self.hide_timer.start(2000) # Check again in 2s
+            return
+
+        self.anim.stop()
+        self.anim.setStartValue(self.opacity_effect.opacity())
+        self.anim.setEndValue(0.0)
+        self.anim.finished.connect(self._on_fade_finished)
+        self.anim.start()
+
+    def _on_fade_finished(self):
+        try:
+            self.anim.finished.disconnect(self._on_fade_finished)
+        except: pass
         self.enter_idle_mode()
+        # self.hide() # Removed to keep orb persistent
 
     # =====================================================================
     # ACTION HANDLERS
@@ -692,27 +748,65 @@ class ProactiveBubble(QWidget):
                  return
             elif self.current_data.get('type') == 'writing_suggestion':
                  reason = self.current_data.get('reason', '')
-                 prompt = f"The system suggested a writing improvement: {reason}. Please apply it."
-                 display = "Applying Writing Fix..."
+                 screen_ctx = self.current_data.get('screen_context', '')
+                 
+                 # Smart Line Extraction for Word
+                 win_title = self.current_data.get('window_title', '').lower()
+                 if "word" in win_title:
+                     lines = [l.strip() for l in screen_ctx.split('\n') if l.strip()]
+                     if lines:
+                         # Heuristic: the last line of OCR in Word is often the most recent input
+                         screen_ctx = lines[-1]
+
+                 prompt = f"""
+You are CORA, a contextual writing assistant.
+
+The user is editing a document and requested a writing improvement.
+
+VISIBLE TEXT:
+{screen_ctx}
+
+TASK:
+Improve the text directly ({reason}).
+
+RULES:
+1. Do NOT explain the problem.
+2. Do NOT repeat JSON.
+3. Do NOT add extra commentary.
+4. Provide ONLY the corrected sentence or paragraph.
+
+FORMAT:
+Original:
+{screen_ctx}
+
+Improved:
+<corrected text>
+"""
+                 display = "Improving Writing..."
             else:
                  reason = self.current_data.get('reason', '')
                  screen_ctx = self.current_data.get('screen_context', '')
                  file_ctx = self.current_data.get('error_context', '')
 
                  prompt = f"""
-COMMAND: Follow Suggestion
+You are CORA, a contextual AI assistant.
 
-SYSTEM OBSERVATION:
+Analyze the current screen content and respond directly.
+
+SCREEN OBSERVATION:
 {reason}
 
-VISIBLE SCREEN CONTENT:
+VISIBLE TEXT FROM SCREEN:
 {screen_ctx}
 
-CODE CONTEXT:
+CODE CONTEXT (if present):
 {file_ctx}
 
-INSTRUCTION:
-Act directly using the provided context.
+TASK:
+Explain or summarize the content shown on the screen clearly and concisely.
+
+Do NOT give instructions to the user.
+Provide the explanation directly.
 """
                  display = "Viewing Suggestion..."
 
@@ -743,11 +837,48 @@ Act directly using the provided context.
         self.hide_bubble()
 
     def trigger_reading_action(self, hint):
-         print(f"Reading Action Triggered: {hint}")
-         display = f"Reading: {hint}..."
-         prompt = (f"COMMAND: Reading Task\n"
-                   f"TASK: {hint}\n"
-                   f"CONTEXT: The user is reading a document. Use the screen content or active document to answer.\n"
-                   f"INSTRUCTION: Provide a clear, concise answer.")
+         """Handles contextual actions (Summarize, Improve, etc.) from suggestion chips."""
+         if not self.current_data:
+             return
+             
+         print(f"Contextual Action Triggered: {hint}")
+         display = f"Processing: {hint}..."
+         
+         screen_ctx = self.current_data.get('screen_context', '')
+         win_title = self.current_data.get('window_title', '').lower()
+         
+         # Smart Line Extraction for Word
+         if "word" in win_title:
+             lines = [l.strip() for l in screen_ctx.split('\n') if l.strip()]
+             if lines:
+                 screen_ctx = lines[-1]
+
+         if self.current_data.get('type') == 'writing_suggestion':
+             prompt = f"""
+You are CORA, a contextual writing assistant.
+
+TASK:
+{hint}
+
+VISIBLE TEXT:
+{screen_ctx}
+
+RULES:
+1. Do NOT explain the problem.
+2. Provide ONLY the corrected sentence or paragraph.
+
+FORMAT:
+Original:
+{screen_ctx}
+
+Improved:
+<corrected text>
+"""
+         else:
+             prompt = (f"COMMAND: Contextual Task\n"
+                       f"TASK: {hint}\n"
+                       f"SCREEN CONTEXT:\n{screen_ctx}\n"
+                       f"INSTRUCTION: Provide a clear, concise response based on the screen content.")
+
          self.ask_cora_clicked.emit(display, prompt)
          self.hide_bubble()

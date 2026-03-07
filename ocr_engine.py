@@ -70,3 +70,6 @@ def extract_text(image_input):
     except Exception as e:
         print(f"OCR Error: {e}")
         return ""
+def extract_text_from_screen(image_input):
+    """Alias for extract_text for better alignment with context-aware calling."""
+    return extract_text(image_input)

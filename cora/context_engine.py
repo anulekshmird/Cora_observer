@@ -188,7 +188,19 @@ class ContextEngine:
         return 0
 
     def get_context_snapshot(self):
-        title = self.get_active_window_title().lower()
+        raw_title = self.get_active_window_title() or ""
+        title = raw_title.lower()
+        
+        # IGNORE SYSTEM WINDOWS (Task Switching, Start Menu, etc.)
+        system_titles = ["task switching", "task view", "start", "search", "notification center", "action center", "new notification", "cortana", "volume control", "system tray", "windows shell", "microsoft shell"]
+        if any(t == title or t in title for t in system_titles) or not title.strip() or title == "window":
+             return {
+                 "window_title": self.last_active_window, # Maintain last known
+                 "mode": "internal",
+                 "mode_primary": "internal",
+                 "mode_secondary": "internal",
+                 "file_path": None, "file_content": None, "error": None, "error_signature": None
+             }
         
         # Dual-Mode Classification
         mode_primary = "general"
@@ -204,12 +216,17 @@ class ContextEngine:
              mode_primary = "developer" # Changed to Dev (broad category)
              mode_secondary = "terminal"
              
-        # 3. Writing/Productivity Mode
-        elif any(x in title for x in ["word", "docs", "writer", "notion", "obsidian", "notes", "notepad", "text editor"]):
+        # 3. Document Mode (Microsoft Word)
+        elif any(x in title for x in ["word", "docx"]):
+             mode_primary = "document"
+             mode_secondary = "writing"
+             
+        # 4. Writing/Productivity Mode (Other)
+        elif any(x in title for x in ["docs", "writer", "notion", "obsidian", "notes", "notepad", "text editor"]):
              mode_primary = "writing"
              mode_secondary = "writing"
         
-        # 4. Email/Communication
+        # 5. Email/Communication
         elif any(x in title for x in ["outlook", "gmail", "slack", "discord", "telegram", "mail"]):
              mode_primary = "writing"
              mode_secondary = "email"

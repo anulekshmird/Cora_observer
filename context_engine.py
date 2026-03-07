@@ -89,6 +89,8 @@ class ContextEngine:
                                 continue
             
             self.last_modified_file = most_recent_file
+            if most_recent_file:
+                print(f"ContextEngine: Last modified file: {os.path.basename(most_recent_file)}")
             return most_recent_file
         except Exception as e:
             # print(f"File Scan Error: {e}")
@@ -204,27 +206,32 @@ class ContextEngine:
              mode_primary = "developer" # Changed to Dev (broad category)
              mode_secondary = "terminal"
              
-        # 3. Writing/Productivity Mode
+        # 3. Writing/Productivity Mode (Documents)
         elif any(x in title for x in ["word", "docs", "writer", "notion", "obsidian", "notes", "notepad", "text editor"]):
-             mode_primary = "writing"
+             mode_primary = "document"
              mode_secondary = "writing"
         
-        # 4. Email/Communication
+        # 4. Spreadsheets
+        elif any(x in title for x in ["excel", "sheets", "calc", "spreadsheet"]):
+             mode_primary = "spreadsheet"
+             mode_secondary = "data"
+
+        # 5. Email/Communication
         elif any(x in title for x in ["outlook", "gmail", "slack", "discord", "telegram", "mail"]):
              mode_primary = "writing"
              mode_secondary = "email"
 
-        # 5. Reading Mode (PDFs, E-Books, Presentations)
+        # 6. Reading Mode (PDFs, E-Books, Presentations)
         elif any(x in title for x in [".pdf", "acrobat", "reader", "epub", "kindle", "mobi", "djvu", "calibre", "foxit", "powerpoint", "slides", "keynote", "prezi"]):
              mode_primary = "reading"
              mode_secondary = "presentation" if "powerpoint" in title or "slides" in title else "pdf"
 
-        # 6. General Browsing
-        elif any(x in title for x in ["chrome", "edge", "firefox", "brave", "safari", "scout", "opera"]):
-             mode_primary = "general" 
-             mode_secondary = "browser"
+        # 7. Video Players (Youtube / VLC / Netflix)
+        elif any(x in title for x in ["youtube", "netflix", "vlc", "mpv", "media player", "twitch", "video"]):
+             mode_primary = "video"
+             mode_secondary = "video"
 
-        # 7. Chat Mode (Cora App)
+        # 8. Chat Mode (Cora App)
         # IMPORTANT: Only match Cora's CHAT window, NOT the suggestion overlay.
         # "Cora Suggestion" must NOT trigger internal mode — it would pause the proactive loop.
         cora_ui_titles = ["cora ai"]
@@ -294,21 +301,18 @@ class ContextEngine:
                 snapshot["file_path"] = last_file
                 
                 # Determine Content Source
-                current_content = None
-                
-                # If this matches our active buffer, use memory content
-                if (self.active_buffer_path and 
+                if (
+                    self.active_buffer_path and
                     os.path.normpath(last_file) == os.path.normpath(self.active_buffer_path) and
-                    self.active_buffer_content):
-                    
+                    self.active_buffer_content
+                ):
                     current_content = self.active_buffer_content
                 else:
-                    # Fallback to disk read
                     try:
                         with open(last_file, 'r', encoding='utf-8', errors='ignore') as f:
                             current_content = f.read()
                     except:
-                        pass
+                        current_content = None
                 
                 snapshot["file_content"] = current_content
 
