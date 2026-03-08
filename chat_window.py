@@ -104,6 +104,11 @@ class MessageBubble(QFrame):
         self.msg_label.setOpenExternalLinks(False)
         self.msg_label.linkActivated.connect(self.handle_link)
         self.msg_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        self.msg_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Minimum,
+        )
+        self.msg_label.setMaximumWidth(760)
         
         # Timestamp
         time_label = QLabel(self.timestamp)
@@ -625,63 +630,77 @@ class ChatWindow(QMainWindow):
         self.copy_feedback.setVisible(True)
         QTimer.singleShot(2000, lambda: self.copy_feedback.setVisible(False))
         
-    def update_mode_indicator(self, mode):
-        emoji_map = {
-            "browser": "🌐 Browser",
-            "document": "📄 Doc",
-            "spreadsheet": "📊 Sheet",
-            "developer": "💻 Dev",
-            "terminal": "🐚 Terminal",
-            "general": "🤖 General"
+    def update_mode_indicator(self, mode: str, reason: str = ""):
+        if reason:
+            display = reason if len(reason) <= 72 else reason[:69] + "…"
+            self.mode_label.setText(display)
+            return
+        ICONS = {
+            "developer": "💻  Developer",
+            "writing": "✍️  Writing",
+            "reading": "📖  Reading",
+            "pdf": "📄  PDF",
+            "spreadsheet": "📊  Spreadsheet",
+            "browser": "🌐  Browser",
+            "youtube": "▶️  YouTube",
+            "general": "🤖  General",
         }
-        text = emoji_map.get(mode, f"Mode: {mode.capitalize()}")
-        self.mode_label.setText(text)
+        self.mode_label.setText(ICONS.get(mode, f"🤖  {mode.capitalize()}"))
 
-    def on_ai_response_start(self, initial_text):
-        # Start a new bubble for Cora
-        self.chat_display.add_message(initial_text, is_user=False)
+    def on_ai_response_start(self, initial_text: str):
+        self._stream_buffer = ""
+        self.chat_display.add_message(initial_text or "…", is_user=False)
         self.current_response_bubble = self.chat_display.get_last_bubble()
-        
+
     def stream_response(self, text):
         try:
-            # Check if bubble object is still valid C++ side
-            if hasattr(self, 'current_response_bubble') and self.current_response_bubble:
-                # Collect full text for formatting
-                if not hasattr(self, '_stream_buffer'):
-                    self._stream_buffer = ""
-                
-                self._stream_buffer += text
-                
-                # Format the full buffer
+            # Append token to self._stream_buffer
+            if not hasattr(self, '_stream_buffer'):
+                self._stream_buffer = ""
+            self._stream_buffer += text
+            
+            # Recover bubble reference if needed
+            if not hasattr(self, 'current_response_bubble') or self.current_response_bubble is None:
+                self.current_response_bubble = self.chat_display.get_last_bubble()
+            
+            if self.current_response_bubble and not self.current_response_bubble.is_user:
+                # Format full buffer
                 formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
+                
+                # Fallback to grey italic span if empty
+                if not formatted_text.strip():
+                    formatted_text = '<span style="color: grey; font-style: italic;">…</span>'
                 
                 lbl = self.current_response_bubble.msg_label
                 lbl.setText(formatted_text)
+                
+                # Adjust sizes
+                lbl.adjustSize()
+                self.current_response_bubble.bubble_container.adjustSize()
+                
                 self.chat_display.scroll_to_bottom()
-            else:
-                # Fallback: Try to get last bubble if it's not user
-                last = self.chat_display.get_last_bubble()
-                if last and not last.is_user:
-                    self.current_response_bubble = last
-                    if not hasattr(self, '_stream_buffer'):
-                         # Attempt to reconstruct buffer from label text if possible, or just start fresh
-                         # For safety, let's just start fresh or use the label's plaintext if we can
-                         self._stream_buffer = last.msg_label.text()
-                    
-                    self._stream_buffer += text
-                    formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
-                    last.msg_label.setText(formatted_text)
-                    self.chat_display.scroll_to_bottom()
         except RuntimeError:
-            # Widget deleted (likely session switch), ignore stream
-            self.current_response_bubble = None
+            # Widget deleted mid-stream
+            pass
         except Exception as e:
             print(f"Stream Error: {e}")
-                    
+
     def finish_response(self):
+        try:
+            if hasattr(self, '_stream_buffer') and self._stream_buffer:
+                formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
+                bubble = self.current_response_bubble or self.chat_display.get_last_bubble()
+                if bubble and not bubble.is_user:
+                    bubble.msg_label.setText(formatted_text)
+                    bubble.msg_label.adjustSize()
+                    bubble.bubble_container.adjustSize()
+        except:
+            pass
+        
         self.set_generating_state(False)
         self.current_response_bubble = None
-        self._stream_buffer = "" # Clear buffer for next message
+        self._stream_buffer = ""
+        self.chat_display.scroll_to_bottom()
         
     # --- Integration Methods for Main.py ---
     

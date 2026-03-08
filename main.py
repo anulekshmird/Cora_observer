@@ -255,6 +255,10 @@ class CoraApp:
     def handle_overlay_action(self, user_text, internal_prompt):
         print(f"Overlay Action: {user_text}")
         
+        reason = self.copilot.last_proactive_context.get("reason", "")
+        app_type = self.copilot.last_proactive_context.get("mode_primary", "general")
+        self.chat_win.update_mode_indicator(app_type, reason=reason)
+
         # 1. Force Open Chat Window First (Avoid toggling closed if already open)
         if not self.chat_win.isVisible():
              self.open_chat()
