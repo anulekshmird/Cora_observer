@@ -46,21 +46,26 @@ class ResponseFormatter:
     @staticmethod
     def _sanitize(text: str) -> str:
         # ── Strip hallucinated CODEBLOCK placeholder text ──────────────
-        # llava sometimes writes the literal word "CODEBLOCK0" or "CODE BLOCK 1"
-        # instead of actual fenced code. Remove these so they never render.
-        text = re.sub(r'\bCODE\s*BLOCK\s*\d+\b', '', text, flags=re.IGNORECASE)
+        # llava sometimes writes "CODE_BLOCK_0" or "CODEBLOCK0" as a
+        # placeholder instead of actual fenced code.
+        # Replace with a generic note rather than blank — so the user
+        # sees something meaningful instead of nothing.
+        text = re.sub(
+            r'\bCODE[_\s]*BLOCK[_\s]*\d+\b',
+            '`[code block]`',
+            text,
+            flags=re.IGNORECASE
+        )
 
         # ── Drop bare JSON-only payloads (internal LLM artifacts) ──────
-        # Only drop it if the ENTIRE response (after stripping) is a JSON
-        # object — not if it happens to start with { mid-sentence.
         stripped = text.strip()
         if stripped.startswith("{") and stripped.endswith("}"):
             try:
                 import json
                 json.loads(stripped)
-                return ""   # pure JSON blob — discard entirely
+                return ""
             except Exception:
-                pass        # not valid JSON — keep going
+                pass
 
         # ── Remove ```json { ... } ``` fences ──────────────────────────
         text = re.sub(r"```json\s*\{.*?\}\s*```", "", text, flags=re.DOTALL)

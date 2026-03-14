@@ -2,6 +2,7 @@ import time
 import json
 import os
 import hashlib
+import re
 from PyQt6.QtCore import QThread, pyqtSignal
 
 import config
@@ -57,6 +58,14 @@ class CopilotController(QThread):
             self.dismissed_signatures.add(self.last_error_signature)
         if self.last_visual_sig:
             self.dismissed_signatures.add(self.last_visual_sig)
+        # Always clear picked context on dismiss so next window gets fresh suggestions
+        if (self.last_proactive_context and
+                self.last_proactive_context.get('screen_context') and
+                self.last_suggestion_sig and
+                'picked' in str(self.last_suggestion_sig)):
+            print("Copilot: Picked context cleared on dismiss.")
+            self.last_proactive_context = None
+            self.last_suggestion_sig    = None
 
     def on_user_snoozed(self, mins):
         self.snoozed_until = time.time() + (mins * 60)
@@ -64,10 +73,21 @@ class CopilotController(QThread):
 
     def pause(self):
         self.paused = True
+        self.hide_bubble_signal.emit()  # hide bubble when chat opens
         print("Copilot Controller: Paused.")
 
     def resume(self):
         self.paused = False
+        self.last_suggestion_sig    = None
+        self.last_visual_sig        = None
+        self.last_active_window     = None
+        self.presence_message_shown = False
+        self.dismissed_signatures.clear()
+        self.context_engine._snapshot_cache = None
+        # Also clear any stale picked context
+        if (self.last_proactive_context and
+                self.last_proactive_context.get('type') == 'picked_suggestion'):
+            self.last_proactive_context = None
         print("Copilot Controller: Resumed.")
 
     def run(self):
@@ -95,6 +115,8 @@ class CopilotController(QThread):
                 # ── Snapshot ──────────────────────────────────────────
                 snapshot       = self.context_engine.get_context_snapshot()
                 current_window = snapshot.get('window_title', '')
+                win_lower      = current_window.lower()
+                cw_lower       = win_lower  # alias used in dialog detection
                 mode_primary   = snapshot.get('mode_primary', 'general')
                 mode_secondary = snapshot.get('mode_secondary', 'unknown')
                 page_title     = snapshot.get('page_title', '')   # e.g. "BLIND FOOD CHALLENGE"
@@ -112,8 +134,26 @@ class CopilotController(QThread):
                     continue
 
                 cw_lower = (current_window or "").lower()
-                if any(kw in cw_lower for kw in ["cora suggestion", "cora ai"]):
-                    time.sleep(1.0)
+                # Skip if active window is CORA's own UI
+                if any(kw in cw_lower for kw in [
+                    "cora suggestion", "cora ai", "cora assistant"
+                ]):
+                    time.sleep(0.5)
+                    continue
+
+                if not current_window.strip() or current_window.strip() in ("", "Window"):
+                    time.sleep(0.5)
+                    continue
+
+                # Skip dialog boxes, popups, and system notifications
+                dialog_keywords = [
+                    "sorry,", "error", "warning", "alert", "dialog",
+                    "not found", "cannot", "could not", "failed",
+                    "do you want", "are you sure", "confirm",
+                    "microsoft word - ", "application error",
+                ]
+                if any(kw in cw_lower for kw in dialog_keywords) and len(current_window) < 80:
+                    time.sleep(0.5)
                     continue
 
                 # ── Clear stale error state ───────────────────────────
@@ -125,14 +165,31 @@ class CopilotController(QThread):
 
                 # ── Window switch — clear stale suggestion ────────────
                 if current_window != self.last_active_window:
+                    cora_own = any(kw in current_window.lower() for kw in [
+                        "cora suggestion", "cora ai", "cora assistant"
+                    ])
+                    if cora_own:
+                        time.sleep(0.3)
+                        continue
                     print(f"Copilot: Window changed → {current_window[:60]}")
                     self.last_active_window     = current_window
+                    self.last_switch_time       = time.time()
                     self.last_suggestion_sig    = None
                     self.last_visual_sig        = None
                     self.presence_message_shown = False
                     self.dismissed_signatures.clear()
-                    self.hide_bubble_signal.emit()  # ← thread-safe UI call
-                    time.sleep(0.5)
+                    self.hide_bubble_signal.emit()
+
+                    # Always clear picked context on window switch
+                    if self.last_proactive_context:
+                        picked_window = self.last_proactive_context.get('picked_at_window', '')
+                        if picked_window and picked_window != current_window:
+                            print("Copilot: Cleared stale picked context on window switch.")
+                            self.last_proactive_context = None
+                        elif self.last_proactive_context.get('type') == 'picked_suggestion':
+                            self.last_proactive_context = None
+
+                    time.sleep(0.3)
                     continue
 
                 # ── OCR change detection ──────────────────────────────
@@ -154,10 +211,13 @@ class CopilotController(QThread):
                 suggestion_triggered       = False
 
                 # ── Classify window ───────────────────────────────────
-                win_lower  = current_window.lower()
-                is_youtube = "youtube" in win_lower or site_name.lower() == "youtube"
-                # Strict word match — must be a doc app, not just containing "word"
-                is_word  = (
+
+                is_youtube = (
+                    "youtube" in win_lower
+                    or site_name.lower() == "youtube"
+                )
+
+                is_word = (
                     not is_youtube and (
                         "microsoft word" in win_lower
                         or win_lower.endswith(".docx")
@@ -166,6 +226,7 @@ class CopilotController(QThread):
                         or ("compatibility mode" in win_lower and "word" in win_lower)
                     )
                 )
+
                 is_excel = (
                     not is_youtube and (
                         "microsoft excel" in win_lower
@@ -173,7 +234,8 @@ class CopilotController(QThread):
                         or " - excel" in win_lower
                     )
                 )
-                is_pdf   = (
+
+                is_pdf = (
                     not is_youtube and (
                         win_lower.endswith(".pdf")
                         or "adobe acrobat" in win_lower
@@ -181,15 +243,24 @@ class CopilotController(QThread):
                         or "pdf reader" in win_lower
                     )
                 )
+
+                # is_browser must always be defined last — depends on above variables
                 is_browser = (
                     (
-                        any(x in win_lower for x in ["- google chrome", "- mozilla firefox",
-                                                      "- microsoft edge", "- brave"])
+                        any(x in win_lower for x in [
+                            "- google chrome", "- mozilla firefox",
+                            "- microsoft edge", "- brave", "- opera"
+                        ])
                         or win_lower.strip() in ("claude", "chatgpt", "perplexity")
-                        or (site_name.lower() in ("claude", "chatgpt", "openrouter",
-                                                   "perplexity", "gemini") and not is_youtube)
+                        or (site_name.lower() in (
+                            "claude", "chatgpt",
+                            "perplexity", "gemini", "google"
+                        ) and not is_youtube)
                     )
                     and not is_youtube
+                    and not is_word
+                    and not is_excel
+                    and not is_pdf
                     and site_name.lower() not in ("youtube", "netflix", "twitch")
                 )
 
@@ -205,10 +276,9 @@ class CopilotController(QThread):
 
                 # ── P2: YouTube — use real title ──────────────────────
                 if not suggestion_triggered and is_youtube:
-                    import re as _re
                     # Strip notification badge e.g. "(85) Title - YouTube - Google Chrome"
-                    raw = _re.sub(r'^\(\d+\)\s*', '', current_window).strip()
-                    parts = _re.split(r'\s*[-—|]\s*', raw)
+                    raw = re.sub(r'^\(\d+\)\s*', '', current_window).strip()
+                    parts = re.split(r'\s*[-—|]\s*', raw)
                     skip  = {
                         "youtube", "google chrome", "mozilla firefox",
                         "microsoft edge", "brave", "opera", "safari",
@@ -257,7 +327,10 @@ class CopilotController(QThread):
                     }
 
                     sig = f"youtube:{display_title or 'home'}"
-                    if sig not in self.dismissed_signatures and sig != self.last_suggestion_sig:
+                    time_since_last = time.time() - self.last_suggestion_time
+                    if (sig not in self.dismissed_signatures 
+                            and sig != self.last_suggestion_sig
+                            and time_since_last > 15.0):
                         self._store_proactive_context(
                             snapshot, mode_primary, current_window,
                             reason, current_ocr,
@@ -275,10 +348,9 @@ class CopilotController(QThread):
                     # ── Word ──────────────────────────────────────────────
                     if is_word:
                         # Extract document name from window title
-                        import re as _re
-                        doc_name = _re.sub(
+                        doc_name = re.sub(
                             r'\s*[-—]\s*(compatibility mode\s*)?[-—]?\s*word.*$', '',
-                            current_window, flags=_re.IGNORECASE
+                            current_window, flags=re.IGNORECASE
                         ).strip() or "your document"
 
                         # Use OCR to detect what section they're in
@@ -309,10 +381,9 @@ class CopilotController(QThread):
 
                     # ── Excel ─────────────────────────────────────────────
                     elif is_excel:
-                        import re as _re
-                        file_name = _re.sub(
+                        file_name = re.sub(
                             r'\s*[-—]\s*excel.*$', '', current_window,
-                            flags=_re.IGNORECASE
+                            flags=re.IGNORECASE
                         ).strip() or "your spreadsheet"
 
                         ocr_lower = current_ocr.lower()
@@ -351,10 +422,9 @@ class CopilotController(QThread):
 
                     # ── PDF ───────────────────────────────────────────────
                     elif is_pdf:
-                        import re as _re
-                        pdf_name = _re.sub(
+                        pdf_name = re.sub(
                             r'\s*[-—]\s*(adobe acrobat|foxit|pdf).*$', '',
-                            current_window, flags=_re.IGNORECASE
+                            current_window, flags=re.IGNORECASE
                         ).strip() or "this PDF"
 
                         ocr_lower = current_ocr.lower()
@@ -393,10 +463,9 @@ class CopilotController(QThread):
 
                     # ── PowerPoint ────────────────────────────────────────
                     elif any(x in win_lower for x in ["powerpoint", ".pptx", " - ppt"]):
-                        import re as _re
-                        ppt_name = _re.sub(
+                        ppt_name = re.sub(
                             r'\s*[-—]\s*powerpoint.*$', '', current_window,
-                            flags=_re.IGNORECASE
+                            flags=re.IGNORECASE
                         ).strip() or "your presentation"
 
                         app_suggestion = {
@@ -431,59 +500,93 @@ class CopilotController(QThread):
 
                     # ── VS Code / developer ───────────────────────────────
                     elif mode_primary == "developer" and not snapshot.get("error"):
-                        import re as _re
-                        # Extract filename from VS Code title
-                        file_match = _re.search(r'[-—]\s*(\S+\.\w+)', current_window)
+                        # Check if it's a browser-based dev tool (GitHub, StackOverflow)
+                        is_browser_dev = any(x in win_lower for x in [
+                            "- google chrome", "- mozilla firefox",
+                            "- microsoft edge", "- brave"
+                        ])
+                        file_match = re.search(r'[-—]\s*(\S+\.\w+)', current_window)
                         fname = file_match.group(1) if file_match else "your code"
 
-                        app_suggestion = {
-                            "type":        "developer_suggestion",
-                            "reason":      f"Coding in {fname}",
-                            "reason_long": f"You're editing \"{fname}\". Cora can review code, explain functions, or suggest improvements.",
-                            "confidence":  0.75,
-                            "suggestions": [
-                                {"label": "Review Code",      "hint": f"Review the visible code in {fname}"},
-                                {"label": "Explain Function", "hint": "Explain what this code does"},
-                                {"label": "Suggest Fix",      "hint": "Suggest improvements or optimizations"},
-                                {"label": "Add Comments",     "hint": "Write docstrings and comments for this code"},
-                            ],
-                        }
+                        if is_browser_dev and site_name:
+                            # GitHub, StackOverflow etc in browser
+                            display = page_title or site_name
+                            app_suggestion = {
+                                "type":        "developer_suggestion",
+                                "reason":      f"Browsing {site_name}: {display[:40]}" if display else f"Browsing {site_name}",
+                                "reason_long": f"You're on {site_name}. Cora can explain code, answer questions, or summarize.",
+                                "confidence":  0.8,
+                                "suggestions": [
+                                    {"label": "Explain Code",    "hint": f"Explain the code shown on this {site_name} page"},
+                                    {"label": "Summarize Repo",  "hint": f"Summarize what this repository does"},
+                                    {"label": "Key Changes",     "hint": "What are the key changes in this commit/PR?"},
+                                    {"label": "Ask Question",    "hint": f"I have a question about this {site_name} page"},
+                                ],
+                            }
+                        else:
+                            app_suggestion = {
+                                "type":        "developer_suggestion",
+                                "reason":      f"Coding in {fname}",
+                                "reason_long": f"You're editing \"{fname}\". Cora can review code, explain functions, or suggest improvements.",
+                                "confidence":  0.75,
+                                "suggestions": [
+                                    {"label": "Review Code",      "hint": f"Review the visible code in {fname}"},
+                                    {"label": "Explain Function", "hint": "Explain what this code does"},
+                                    {"label": "Suggest Fix",      "hint": "Suggest improvements or optimizations"},
+                                    {"label": "Add Comments",     "hint": "Write docstrings and comments for this code"},
+                                ],
+                            }
 
-                    # ── Known browser site ────────────────────────────────
-                    elif is_browser and site_name:
-                        # Page title gives us the actual article/page name
-                        display = page_title or site_name
+                    # ── Messaging apps ────────────────────────────────────
+                    elif any(x in win_lower for x in [
+                        "whatsapp", "telegram", "signal", "discord", "slack", "teams"
+                    ]):
+                        app_name = next((x.title() for x in [
+                            "whatsapp", "telegram", "signal", "discord", "slack", "teams"
+                        ] if x in win_lower), "Messaging")
+
                         app_suggestion = {
                             "type":        "browser_suggestion",
-                            "reason":      f"Reading on {site_name}",
-                            "reason_long": f"You're reading \"{display}\" on {site_name}. Cora can summarize, explain, or answer questions.",
+                            "reason":      f"Using {app_name}",
+                            "reason_long": f"You're in {app_name}. Cora can help draft replies, summarize conversations, or suggest responses.",
                             "confidence":  0.75,
                             "suggestions": [
-                                {"label": "Summarize Page",   "hint": f"Summarize \"{display}\""},
-                                {"label": "Key Points",       "hint": "Extract the main points"},
-                                {"label": "Explain Simply",   "hint": "Explain this page in simple terms"},
-                                {"label": "Ask Question",     "hint": "I have a question about this page"},
+                                {"label": "Draft Reply",    "hint": f"Help me write a reply in {app_name}"},
+                                {"label": "Summarize Chat", "hint": "Summarize the visible conversation"},
+                                {"label": "Improve Message","hint": "Make my message clearer and more polite"},
+                                {"label": "Translate",      "hint": "Translate the visible message"},
                             ],
                         }
 
                     # ── Generic browser ───────────────────────────────────
                     elif is_browser:
-                        display = page_title or current_window
+                        # Use page_title for specific page content, fall back to window title
+                        display = page_title or site_name or current_window
+                        # Strip browser suffix from display
+                        display = re.sub(
+                            r'\s*[-—]\s*(google chrome|mozilla firefox|microsoft edge|brave|opera).*$',
+                            '', display, flags=re.IGNORECASE
+                        ).strip()
+
                         app_suggestion = {
                             "type":        "browser_suggestion",
-                            "reason":      f"Browsing: {display[:40]}" if display else "Browsing the web",
-                            "reason_long": "Cora can summarize or explain the current page.",
-                            "confidence":  0.65,
+                            "reason":      f"Reading: {display[:50]}" if display else "Browsing the web",
+                            "reason_long": f"You're viewing \"{display}\". Cora can summarize, explain, or answer questions about this page.",
+                            "confidence":  0.7,
                             "suggestions": [
-                                {"label": "Summarize Page",   "hint": "Summarize this web page"},
-                                {"label": "Key Ideas",        "hint": "Extract key ideas from this page"},
-                                {"label": "Explain",          "hint": "Explain this page content simply"},
+                                {"label": "Summarize Page",  "hint": f"Summarize the content of: {display}"},
+                                {"label": "Key Ideas",       "hint": f"Extract the key ideas from: {display}"},
+                                {"label": "Explain Simply",  "hint": f"Explain this page in simple terms: {display}"},
+                                {"label": "Ask Question",    "hint": f"I have a question about: {display}"},
                             ],
                         }
 
                     if app_suggestion:
                         sig = f"{app_suggestion['reason']}:{current_window}"
-                        if sig not in self.dismissed_signatures and sig != self.last_suggestion_sig:
+                        time_since_last = time.time() - self.last_suggestion_time
+                        if (sig not in self.dismissed_signatures 
+                                and sig != self.last_suggestion_sig
+                                and time_since_last > 15.0):
                             app_suggestion["screen_context"] = current_ocr
                             app_suggestion["window_title"]   = current_window
                             app_suggestion["page_title"]     = page_title
@@ -522,16 +625,26 @@ class CopilotController(QThread):
 
                 # ── P6: Presence message ──────────────────────────────
                 if (not suggestion_triggered
-                        and time_since_last_suggestion > 30.0
-                        and mode_primary not in ('video', 'youtube', 'browser')):
+                        and time_since_last_suggestion > 45.0
+                        and mode_primary not in ('video', 'youtube', 'browser', 'internal')):
                     if not self.presence_message_shown:
-                        if self.overlay.opacity_effect.opacity() < 0.1:
-                            self.overlay.show_message(
-                                "Cora Assistant",
-                                "I'm observing your activity. Ask me anything!"
-                            )
-                            self.presence_message_shown = True
-                            self.last_suggestion_time   = time.time()
+                        self.presence_message_shown = True
+                        self.last_suggestion_time   = time.time()
+                        # Use signal to safely show from non-UI thread
+                        self.observer.signals.suggestion_ready.emit({
+                            "type":        "general",
+                            "reason":      "I'm here if you need help",
+                            "reason_long": "Ask me anything about what's on your screen.",
+                            "confidence":  0.5,
+                            "suggestions": [
+                                {"label": "Ask Anything",   "hint": "Ask me anything"},
+                                {"label": "What's on screen", "hint": "Describe what's on my screen"},
+                            ],
+                            "screen_context": current_ocr,
+                            "window_title":   current_window,
+                            "page_title":     page_title,
+                            "site_name":      site_name,
+                        })
 
                 # ── Clear developer error state if resolved ───────────
                 if (not snapshot.get("error")
@@ -648,15 +761,15 @@ class CopilotController(QThread):
         print("--- DEBUG PROMPT END ---")
 
         try:
-            import ollama
             now = time.time()
             if now - self.last_llm_call_time < 1.5:
                 print("Copilot: Rate limit hit. Skipping LLM call.")
                 return
             self.last_llm_call_time = now
 
+            from observer import _get_ollama
             print("Copilot: Asking LLM for error fix...")
-            response = ollama.chat(
+            response = _get_ollama().chat(
                 model=self.observer.model,
                 messages=[
                     {'role': 'system', 'content': config.DEV_SYSTEM_PROMPT},
@@ -708,7 +821,6 @@ class CopilotController(QThread):
 
         should_check = mode_secondary in ('terminal', 'browser', 'unknown') or \
                        mode_primary in ('general', 'reading')
-
         if not should_check:
             return
 
@@ -720,27 +832,34 @@ class CopilotController(QThread):
         if ocr_text and ocr_text == self.last_ocr_text_cache:
             return
 
-        img = self.observer.capture_screen()
-        if img is None:
-            return
-
         win_title = snapshot.get('window_title', 'Unknown').lower()
         if any(kw in win_title for kw in ["cora ai", "cora suggestion"]):
             return
 
-        payload = self.observer.analyze(img, context_text=f"Active Window: {win_title}")
-        if payload and isinstance(payload, dict):
-            reason = payload.get('reason', '')
-            sig    = f"{reason}:{win_title}"
-            if sig == self.last_suggestion_sig:
-                return
+        self.last_llm_call_time = now
 
-            self._store_proactive_context(
-                snapshot, mode_primary, win_title, reason, ocr_text
-            )
-            self.last_suggestion_sig  = sig
-            self.last_suggestion_time = time.time()
-            self.observer.signals.suggestion_ready.emit(payload)
+        import threading
+        def _worker():
+            try:
+                img = self.observer.capture_screen()
+                if img is None:
+                    return
+                payload = self.observer.analyze(img, context_text=f"Active Window: {win_title}")
+                if payload and isinstance(payload, dict):
+                    reason = payload.get('reason', '')
+                    sig    = f"{reason}:{win_title}"
+                    if sig == self.last_suggestion_sig:
+                        return
+                    self._store_proactive_context(
+                        snapshot, mode_primary, win_title, reason, ocr_text
+                    )
+                    self.last_suggestion_sig  = sig
+                    self.last_suggestion_time = time.time()
+                    self.observer.signals.suggestion_ready.emit(payload)
+            except Exception as e:
+                print(f"Visual fallback worker error: {e}")
+
+        threading.Thread(target=_worker, daemon=True).start()
 
     # ------------------------------------------------------------------
     # Writing handler

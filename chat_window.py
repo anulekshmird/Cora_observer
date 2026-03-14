@@ -3,6 +3,7 @@ import sys
 import os
 import datetime
 import base64
+import re
 from PyQt6.QtCore import Qt, pyqtSignal, QThread, QSize, QTimer, QPropertyAnimation, QEasingCurve, QPoint
 from PyQt6.QtGui import QFont, QIcon, QTextCursor, QColor, QAction, QPainter, QBrush, QLinearGradient, QPalette
 from PyQt6.QtWidgets import (
@@ -58,10 +59,14 @@ class VoiceWorker(QThread):
 
 # --- Modern Message Bubble ---
 class MessageBubble(QFrame):
+    copy_requested = pyqtSignal(str)
+    edit_requested = pyqtSignal(str)
+
     def __init__(self, text, is_user=False, timestamp=None, parent=None):
         super().__init__(parent)
-        self.is_user = is_user
-        self.text = text
+        self.is_user   = is_user
+        self.raw_text  = text # preserve raw for editing
+        self.text      = text
         self.timestamp = timestamp or datetime.datetime.now().strftime("%H:%M")
         
         self.setup_ui()
@@ -86,11 +91,9 @@ class MessageBubble(QFrame):
             """)
             layout.addWidget(self.avatar_label, 0, Qt.AlignmentFlag.AlignTop)
 
-        # Spacer for alignment
         if self.is_user:
             layout.addStretch()
         
-        # Bubble container
         self.bubble_container = QFrame()
         self.bubble_container.setObjectName("bubbleContainer")
         bubble_layout = QVBoxLayout(self.bubble_container)
@@ -100,25 +103,54 @@ class MessageBubble(QFrame):
         # Message text
         self.msg_label = QLabel(self.text)
         self.msg_label.setWordWrap(True)
-        self.msg_label.setTextFormat(Qt.TextFormat.RichText) # Changed from MarkdownText to RichText for styled HTML
-        self.msg_label.setOpenExternalLinks(False)
-        self.msg_label.linkActivated.connect(self.handle_link)
+        self.msg_label.setTextFormat(Qt.TextFormat.RichText)
+        self.msg_label.setOpenExternalLinks(True)
         self.msg_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.LinksAccessibleByMouse)
-        self.msg_label.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Minimum,
-        )
+        self.msg_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.msg_label.setMaximumWidth(760)
+        
+        # ── Buttons Row (Copy/Edit) ──
+        self.btn_bar = QWidget()
+        self.btn_bar.setFixedHeight(24)
+        btn_layout = QHBoxLayout(self.btn_bar)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout.setSpacing(8)
+        
+        self.copy_btn = QPushButton("📋 Copy")
+        self.edit_btn = QPushButton("✏️ Edit")
+        
+        for btn in [self.copy_btn, self.edit_btn]:
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: transparent; color: #94A3B8;
+                    border: none; font-size: 11px; font-weight: 600;
+                    padding: 2px 6px; border-radius: 4px;
+                }
+                QPushButton:hover { background: rgba(255,255,255,0.1); color: white; }
+            """)
+        
+        self.copy_btn.clicked.connect(self.on_copy)
+        self.edit_btn.clicked.connect(self.on_edit)
+        
+        btn_layout.addWidget(self.copy_btn)
+        if self.is_user:
+            btn_layout.addWidget(self.edit_btn)
+        btn_layout.addStretch()
+        self.btn_bar.setVisible(False)
         
         # Timestamp
         time_label = QLabel(self.timestamp)
         time_label.setObjectName("timestamp")
-        time_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        
+        footer_layout = QHBoxLayout()
+        footer_layout.addWidget(self.btn_bar)
+        footer_layout.addStretch()
+        footer_layout.addWidget(time_label)
         
         bubble_layout.addWidget(self.msg_label)
-        bubble_layout.addWidget(time_label)
+        bubble_layout.addLayout(footer_layout)
         
-        # Add shadow effect
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(15)
         shadow.setColor(QColor(0, 0, 0, 40))
@@ -126,29 +158,30 @@ class MessageBubble(QFrame):
         self.bubble_container.setGraphicsEffect(shadow)
         
         layout.addWidget(self.bubble_container)
-        
         if not self.is_user:
             layout.addStretch()
-            
-        # Set maximum width for bubble
+        
         self.bubble_container.setMaximumWidth(780)
         self.bubble_container.setMinimumWidth(100)
-        
-    def handle_link(self, link):
-        if link.startswith("copy:"):
-            try:
-                b64_data = link.split("copy:")[1]
-                command = base64.b64decode(b64_data).decode()
-                clipboard = QApplication.clipboard()
-                clipboard.setText(command)
-                print(f"Copied to clipboard: {command}")
-                
-                 # Visual feedback: Find the parent ChatWindow and show feedback
-                main_win = self.window()
-                if hasattr(main_win, 'show_copy_feedback'):
-                    main_win.show_copy_feedback()
-            except Exception as e:
-                print(f"Copy failed: {e}")
+
+    def enterEvent(self, event):
+        self.btn_bar.setVisible(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.btn_bar.setVisible(False)
+        super().leaveEvent(event)
+
+    def on_copy(self):
+        # Plain text for clipboard
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.raw_text)
+        main_win = self.window()
+        if hasattr(main_win, 'show_copy_feedback'):
+            main_win.show_copy_feedback()
+
+    def on_edit(self):
+        self.edit_requested.emit(self.raw_text)
 
     def apply_styles(self):
         if self.is_user:
@@ -158,17 +191,8 @@ class MessageBubble(QFrame):
                     border-radius: 18px;
                     border-bottom-right-radius: 4px;
                 }
-                QLabel {
-                    color: white;
-                    font-size: 15px;
-                    background: transparent;
-                    border: none;
-                }
-                QLabel#timestamp {
-                    color: rgba(255, 255, 255, 0.6);
-                    font-size: 11px;
-                    margin-top: 2px;
-                }
+                QLabel { color: white; font-size: 15px; background: transparent; }
+                QLabel#timestamp { color: rgba(255,255,255,0.6); font-size: 11px; }
             """)
         else:
             self.setStyleSheet("""
@@ -177,17 +201,8 @@ class MessageBubble(QFrame):
                     border-radius: 18px;
                     border-bottom-left-radius: 4px;
                 }
-                QLabel {
-                    color: #E2E8F0;
-                    font-size: 15px;
-                    background: transparent;
-                    border: none;
-                }
-                QLabel#timestamp {
-                    color: #94A3B8;
-                    font-size: 11px;
-                    margin-top: 2px;
-                }
+                QLabel { color: #E2E8F0; font-size: 15px; background: transparent; }
+                QLabel#timestamp { color: #94A3B8; font-size: 11px; }
             """)
 
 # --- Modern Chat Display with Bubbles ---
@@ -251,11 +266,21 @@ class ChatDisplay(QScrollArea):
              self.welcome_label.setVisible(False)
         
         bubble = MessageBubble(text, is_user)
+        # Connect edit signal
+        if is_user:
+            bubble.edit_requested.connect(self.on_bubble_edit_requested)
+            
         # Insert before the stretch at index cnt-1
         self.layout.insertWidget(self.layout.count() - 1, bubble)
         
         # Scroll to bottom
         QTimer.singleShot(50, self.scroll_to_bottom)
+
+    def on_bubble_edit_requested(self, text):
+        # Find main window to handle edit
+        main_win = self.window()
+        if hasattr(main_win, 'on_edit_requested'):
+            main_win.on_edit_requested(text)
     
     def get_last_bubble(self):
         # Return the last MessageBubble (skip the stretch at end)
@@ -493,15 +518,72 @@ class ChatWindow(QMainWindow):
         self.init_ui()
         self.apply_styles()
         
+        # Streaming state
+        self._streaming_label     = None
+        self._streaming_text      = ""
+        self._streaming_container = None
+
+        # Message history tracking for edit/regenerate
+        self._message_widgets = []  # list of {role, text, widget}
+        self._last_user_message = ""
+
         # Connect internal signals
-        self.ai_response_signal.connect(self.on_ai_response_start)
-        self.stream_token_signal.connect(self.stream_response)
-        self.stream_finished_signal.connect(self.finish_response)
+        self.stream_token_signal.connect(self.append_stream_chunk)
+        self.stream_finished_signal.connect(self.on_stream_done)
         
+        self._welcome_widget = None
+    def _make_welcome_widget(self) -> QWidget:
+        w = QWidget()
+        w.setStyleSheet("background: transparent;")
+        layout = QVBoxLayout(w)
+        layout.setContentsMargins(20, 40, 20, 40)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        emoji = QLabel("👋")
+        emoji.setStyleSheet("font-size: 36px; background: transparent;")
+        emoji.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        title = QLabel("Hello! I'm Cora")
+        title.setStyleSheet("""
+            color: #f1f5f9;
+            font-size: 20px;
+            font-weight: bold;
+            background: transparent;
+        """)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        sub = QLabel("Your AI assistant. How can I help you today?")
+        sub.setStyleSheet("color: #64748b; font-size: 13px; background: transparent;")
+        sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(emoji)
+        layout.addWidget(title)
+        layout.addWidget(sub)
+        return w
+
+    def _hide_welcome(self):
+        """Hide welcome screen when first message is added."""
+        if self._welcome_widget and self._welcome_widget.isVisible():
+            self._welcome_widget.hide()
+            self._welcome_widget = None
+        # Also hide ChatDisplay's built-in welcome
+        if hasattr(self, 'chat_display') and hasattr(self.chat_display, 'welcome_label'):
+            if self.chat_display.welcome_label and self.chat_display.welcome_label.isVisible():
+                self.chat_display.welcome_label.setVisible(False)
+
     def closeEvent(self, event):
         self.closed_signal.emit()
         event.accept()
         
+    def show(self):
+        self.setWindowFlags(
+            Qt.WindowType.Window |
+            Qt.WindowType.WindowStaysOnTopHint
+        )
+        super().show()
+        self.raise_()
+        self.activateWindow()
+
     def init_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -539,6 +621,7 @@ class ChatWindow(QMainWindow):
         
         # Chat display
         self.chat_display = ChatDisplay()
+        self.chat_layout  = self.chat_display.layout
         
         # Input area
         self.input_area = ModernInputArea()
@@ -577,14 +660,195 @@ class ChatWindow(QMainWindow):
         # Only proceed if text/attachment exists (prevent empty bubbles)
         if text or attachment:
              if text:
-                 self.chat_display.add_message(text, is_user=True)
+                 # self.chat_display.add_message(text, is_user=True)
+                 self.add_user_message(text)
                  
              if attachment:
-                 self.chat_display.add_message(f"📎 Attached: {os.path.basename(attachment)}", is_user=True)
+                 # self.chat_display.add_message(f"📎 Attached: {os.path.basename(attachment)}", is_user=True)
+                 self.add_user_message(f"📎 Attached: {os.path.basename(attachment)}")
                  
              # Emit signal to main.py
              self.set_generating_state(True)
              self.send_message_signal.emit(text, attachment)
+
+    def add_user_message(self, text: str):
+        self._hide_welcome()
+        self._last_user_message = text
+        widget = self._make_message_widget(text, is_user=True)
+        self.chat_layout.addWidget(widget)
+        if hasattr(self, 'scroll_area'):
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(50, lambda:
+                self.scroll_area.verticalScrollBar().setValue(
+                    self.scroll_area.verticalScrollBar().maximum()
+                )
+            )
+
+    def _make_message_widget(self, text: str, is_user: bool) -> QWidget:
+        outer = QWidget()
+        outer.setStyleSheet("background: transparent;")
+        outer_layout = QVBoxLayout(outer)
+        outer_layout.setContentsMargins(0, 2, 0, 2)
+        outer_layout.setSpacing(2)
+
+        # Bubble
+        # We use a QLabel but with style similar to MessageBubble
+        bubble = QLabel(text)
+        bubble.setWordWrap(True)
+        bubble.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        
+        if is_user:
+            bubble.setStyleSheet("""
+                QLabel {
+                    background: #2563EB;
+                    color: white;
+                    border-radius: 12px;
+                    padding: 10px 14px;
+                    font-size: 13px;
+                }
+            """)
+            bubble.setAlignment(Qt.AlignmentFlag.AlignRight)
+        else:
+            bubble.setStyleSheet("""
+                QLabel {
+                    background: rgba(255,255,255,0.08);
+                    color: #e2e8f0;
+                    border-radius: 12px;
+                    padding: 10px 14px;
+                    font-size: 13px;
+                }
+            """)
+        outer_layout.addWidget(bubble)
+
+        # Action buttons row
+        btn_row        = QWidget()
+        btn_row.setStyleSheet("background: transparent;")
+        btn_layout     = QHBoxLayout(btn_row)
+        btn_layout.setContentsMargins(4, 0, 4, 0)
+        btn_layout.setSpacing(4)
+
+        btn_style = """
+            QPushButton {
+                background: transparent;
+                border: 1px solid #334155;
+                color: #64748b;
+                border-radius: 4px;
+                padding: 2px 8px;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                border-color: #3b82f6;
+                color: #3b82f6;
+            }
+        """
+
+        # Copy button — always present
+        copy_btn = QPushButton("⎘ Copy")
+        copy_btn.setFixedHeight(22)
+        copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        copy_btn.setStyleSheet(btn_style)
+        copy_btn.clicked.connect(lambda: self._copy_text(text, copy_btn))
+
+        if is_user:
+            btn_layout.addStretch()
+            btn_layout.addWidget(copy_btn)
+
+            # Edit button
+            edit_btn = QPushButton("✎ Edit")
+            edit_btn.setFixedHeight(22)
+            edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            edit_btn.setStyleSheet(btn_style)
+            edit_btn.clicked.connect(lambda: self._edit_message(text, outer))
+            btn_layout.addWidget(edit_btn)
+        else:
+            btn_layout.addStretch()
+            btn_layout.addWidget(copy_btn)
+
+            # Regenerate button — only on last AI message
+            regen_btn = QPushButton("↺ Regenerate")
+            regen_btn.setFixedHeight(22)
+            regen_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            regen_btn.setStyleSheet(btn_style)
+            regen_btn.clicked.connect(lambda: self._regenerate(outer))
+            btn_layout.addWidget(regen_btn)
+            # Store ref so we can hide regen on older messages
+            outer._regen_btn = regen_btn
+
+        outer_layout.addWidget(btn_row)
+
+        # Track this widget
+        role = 'user' if is_user else 'assistant'
+        self._message_widgets.append({
+            'role':   role,
+            'text':   text,
+            'widget': outer,
+        })
+
+        return outer
+
+    def _copy_text(self, text: str, btn: QPushButton):
+        try:
+            import pyperclip
+            pyperclip.copy(text)
+        except Exception:
+            from PyQt6.QtWidgets import QApplication
+            QApplication.clipboard().setText(text)
+
+        original = btn.text()
+        btn.setText("✓ Copied!")
+        btn.setStyleSheet(btn.styleSheet().replace('#64748b', '#22c55e'))
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(1500, lambda: btn.setText(original))
+
+    def _edit_message(self, text: str, widget: QWidget):
+        """Put message in input, remove it and all after it."""
+        idx = None
+        for i, m in enumerate(self._message_widgets):
+            if m['widget'] is widget:
+                idx = i
+                break
+        if idx is None: return
+
+        to_remove = self._message_widgets[idx:]
+        self._message_widgets = self._message_widgets[:idx]
+
+        for m in to_remove:
+            w = m['widget']
+            self.chat_layout.removeWidget(w)
+            w.deleteLater()
+
+        # Put text back in input field
+        if hasattr(self, 'input_area') and hasattr(self.input_area, 'input_field'):
+            self.input_area.input_field.setText(text)
+            self.input_area.input_field.setFocus()
+
+    def _regenerate(self, widget: QWidget):
+        """Remove last AI response and resend last user message."""
+        idx = None
+        for i, m in enumerate(self._message_widgets):
+            if m['widget'] is widget:
+                idx = i
+                break
+        if idx is None: return
+
+        last_user_text = None
+        for m in reversed(self._message_widgets[:idx]):
+            if m['role'] == 'user':
+                last_user_text = m['text']
+                break
+        if not last_user_text: return
+
+        to_remove = self._message_widgets[idx:]
+        self._message_widgets = self._message_widgets[:idx]
+
+        for m in to_remove:
+            w = m['widget']
+            self.chat_layout.removeWidget(w)
+            w.deleteLater()
+
+        print(f'[REGEN] Re-sending: {last_user_text[:60]}')
+        self.set_generating_state(True)
+        self.send_message_signal.emit(last_user_text, None)
         
     def set_generating_state(self, is_generating):
         self.is_generating = is_generating
@@ -647,61 +911,191 @@ class ChatWindow(QMainWindow):
         }
         self.mode_label.setText(ICONS.get(mode, f"🤖  {mode.capitalize()}"))
 
-    def on_ai_response_start(self, initial_text: str):
-        self._stream_buffer = ""
-        self.chat_display.add_message(initial_text or "…", is_user=False)
-        self.current_response_bubble = self.chat_display.get_last_bubble()
-
-    def stream_response(self, text):
-        try:
-            # Append token to self._stream_buffer
-            if not hasattr(self, '_stream_buffer'):
-                self._stream_buffer = ""
-            self._stream_buffer += text
+    def append_stream_chunk(self, text: str):
+        """Append streaming text to current AI response bubble."""
+        self._hide_welcome()
+        if self._streaming_label is None:
+            # Create new response bubble for this stream
+            self._streaming_text  = ""
+            self._streaming_label = QLabel()
+            self._streaming_label.setWordWrap(True)
+            self._streaming_label.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._streaming_label.setStyleSheet("""
+                QLabel {
+                    background: rgba(255,255,255,0.08);
+                    color: #e2e8f0;
+                    border-radius: 12px;
+                    padding: 10px 14px;
+                    font-size: 13px;
+                }
+            """)
+            # Add to chat layout
+            # Note: We append to self.chat_display.layout
+            container = QWidget()
+            layout    = QVBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 4)
+            layout.addWidget(self._streaming_label)
             
-            # Recover bubble reference if needed
-            if not hasattr(self, 'current_response_bubble') or self.current_response_bubble is None:
-                self.current_response_bubble = self.chat_display.get_last_bubble()
-            
-            if self.current_response_bubble and not self.current_response_bubble.is_user:
-                # Format full buffer
-                formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
-                
-                # Fallback to grey italic span if empty
-                if not formatted_text.strip():
-                    formatted_text = '<span style="color: grey; font-style: italic;">…</span>'
-                
-                lbl = self.current_response_bubble.msg_label
-                lbl.setText(formatted_text)
-                
-                # Adjust sizes
-                lbl.adjustSize()
-                self.current_response_bubble.bubble_container.adjustSize()
-                
-                self.chat_display.scroll_to_bottom()
-        except RuntimeError:
-            # Widget deleted mid-stream
-            pass
-        except Exception as e:
-            print(f"Stream Error: {e}")
+            # Using the chat_display's internal layout
+            d_layout = self.chat_display.layout
+            d_layout.insertWidget(d_layout.count() - 1, container)
+            self._streaming_container = container
 
-    def finish_response(self):
-        try:
-            if hasattr(self, '_stream_buffer') and self._stream_buffer:
-                formatted_text = formatter.ResponseFormatter.format(self._stream_buffer)
-                bubble = self.current_response_bubble or self.chat_display.get_last_bubble()
-                if bubble and not bubble.is_user:
-                    bubble.msg_label.setText(formatted_text)
-                    bubble.msg_label.adjustSize()
-                    bubble.bubble_container.adjustSize()
-        except:
-            pass
-        
-        self.set_generating_state(False)
-        self.current_response_bubble = None
-        self._stream_buffer = ""
+        self._streaming_text += text
+        self._streaming_label.setText(self._streaming_text)
+
+        # Auto scroll to bottom
         self.chat_display.scroll_to_bottom()
-        
+
+    def on_stream_done(self):
+        if self._streaming_text:
+            final_text = self._streaming_text
+
+            if self._streaming_container:
+                d_layout = self.chat_display.layout
+                d_layout.removeWidget(self._streaming_container)
+                self._streaming_container.deleteLater()
+
+            msg_widget = self._make_message_widget(final_text, is_user=False)
+
+            # If response has code — add dedicated Copy Code button
+            if '```' in final_text:
+                import re
+                code_blocks = re.findall(r'```\w*\n?(.*?)```', final_text, re.DOTALL)
+                if code_blocks:
+                    all_code = '\n\n'.join(code_blocks).strip()
+                    code_copy_btn = QPushButton("📋 Copy Code")
+                    code_copy_btn.setFixedHeight(26)
+                    code_copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                    code_copy_btn.setStyleSheet("""
+                        QPushButton {
+                            background: rgba(59,130,246,0.15);
+                            border: 1px solid #3b82f6;
+                            color: #3b82f6;
+                            border-radius: 6px;
+                            padding: 3px 12px;
+                            font-size: 11px;
+                            font-weight: bold;
+                        }
+                        QPushButton:hover {
+                            background: rgba(59,130,246,0.3);
+                            color: white;
+                        }
+                    """)
+                    code_copy_btn.clicked.connect(
+                        lambda: self._copy_text(all_code, code_copy_btn)
+                    )
+                    code_row        = QWidget()
+                    code_row_layout = QHBoxLayout(code_row)
+                    code_row_layout.setContentsMargins(4, 0, 4, 4)
+                    code_row_layout.addStretch()
+                    code_row_layout.addWidget(code_copy_btn)
+                    msg_widget.layout().addWidget(code_row)
+
+            # Hide regen on previous AI messages
+            for m in self._message_widgets[:-1]:
+                if m['role'] == 'assistant' and hasattr(m['widget'], '_regen_btn'):
+                    m['widget']._regen_btn.hide()
+
+            d_layout = self.chat_display.layout
+            d_layout.insertWidget(d_layout.count() - 1, msg_widget)
+
+        self._streaming_label     = None
+        self._streaming_text      = ""
+        self._streaming_container = None
+        self.set_generating_state(False)
+
+        if hasattr(self, 'chat_display'):
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(100, lambda:
+                self.chat_display.verticalScrollBar().setValue(
+                    self.chat_display.verticalScrollBar().maximum()
+                )
+            )
+
+    def _render_markdown(self, text: str) -> str:
+        import re
+        html = text
+
+        # Code blocks with copy button
+        def replace_code_block(m):
+            lang = m.group(1) or 'code'
+            code = m.group(2).strip()
+            escaped = (code
+                .replace('&', '&amp;')
+                .replace('<', '&lt;')
+                .replace('>', '&gt;'))
+            return (
+                f'<div style="margin:8px 0;">'
+                f'<div style="background:#0d1117;border:1px solid #30363d;'
+                f'border-radius:8px;padding:12px;'
+                f'font-family:Consolas,Monaco,monospace;font-size:12px;'
+                f'color:#e6edf3;line-height:1.5;white-space:pre-wrap;">'
+                f'{escaped}'
+                f'</div></div>'
+            )
+        html = re.sub(
+            r'```(\w*)\n?(.*?)```',
+            replace_code_block,
+            html,
+            flags=re.DOTALL
+        )
+
+        # Inline code
+        html = re.sub(
+            r'`([^`\n]+)`',
+            r'<code style="background:#0d1117;color:#79c0ff;'
+            r'padding:1px 5px;border-radius:3px;'
+            r'font-family:Consolas,monospace;font-size:12px;">\1</code>',
+            html
+        )
+
+        # Bold
+        html = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', html)
+
+        # Italic
+        html = re.sub(r'\*(.+?)\*', r'<i>\1</i>', html)
+
+        # Headers
+        html = re.sub(r'^### (.+)$',
+            r'<div style="color:#60a5fa;font-weight:bold;'
+            r'margin:6px 0 2px 0;">\1</div>',
+            html, flags=re.MULTILINE)
+        html = re.sub(r'^## (.+)$',
+            r'<div style="color:#60a5fa;font-size:14px;font-weight:bold;'
+            r'margin:8px 0 2px 0;">\1</div>',
+            html, flags=re.MULTILINE)
+
+        # Bullets
+        html = re.sub(
+            r'^\s*[-•*]\s+(.+)$',
+            r'<div style="padding-left:14px;margin:2px 0;">• \1</div>',
+            html, flags=re.MULTILINE
+        )
+
+        # Numbered list
+        html = re.sub(
+            r'^\s*(\d+)\.\s+(.+)$',
+            r'<div style="padding-left:14px;margin:2px 0;">\1. \2</div>',
+            html, flags=re.MULTILINE
+        )
+
+        # Newlines
+        html = html.replace('\n', '<br>')
+
+        return (
+            f'<div style="color:#e2e8f0;font-size:13px;'
+            f'line-height:1.6;">{html}</div>'
+        )
+
+    def _copy_to_clipboard(self, text, btn):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(text)
+        btn.setText("✓ Copied")
+        QTimer.singleShot(2000, lambda: btn.setText("⎘ Copy"))
+
     # --- Integration Methods for Main.py ---
     
     def start_new_chat(self):
@@ -716,6 +1110,12 @@ class ChatWindow(QMainWindow):
         
     def delete_chat(self, session_id):
         self.delete_session_signal.emit(session_id)
+        
+    def on_edit_requested(self, text):
+        from PyQt6.QtGui import QTextCursor
+        self.input_area.input_field.setPlainText(text)
+        self.input_area.input_field.setFocus()
+        self.input_area.input_field.moveCursor(QTextCursor.MoveOperation.End)
         
     def toggle_voice(self):
         if not self.recognizer:
@@ -742,6 +1142,23 @@ class ChatWindow(QMainWindow):
     def append_message(self, role, text, is_user=False):
         # This is called by main.py when loading history
         self.chat_display.add_message(text, is_user=is_user)
+
+    def set_context(self, ctx):
+        """Store context for next generation."""
+        self._active_ctx = ctx
+        self.update_mode_indicator(ctx.app)
+
+    def get_history(self) -> list:
+        """Return conversation history from tracked message widgets."""
+        history = []
+        for m in self._message_widgets:
+            role = 'user' if m['role'] == 'user' else 'assistant'
+            # Strip markdown for history
+            text = m['text']
+            if len(text) > 500:
+                text = text[:500] + '...'
+            history.append({'role': role, 'content': text})
+        return history[-12:]  # last 6 turns
         
     # Helper to clean/prep markdown text if needed
     def clean_text(self, text):

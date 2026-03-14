@@ -1,7 +1,11 @@
 import time
 import mss
-import ollama
 import threading
+
+# ollama imported lazily to avoid blocking on startup
+def _get_ollama():
+    import ollama
+    return ollama
 from PIL import Image
 import io
 import os
@@ -50,9 +54,8 @@ class Observer:
         self.paused    = False
         self.stop_flag = False
         self.signals   = ObserverSignal()
-        self.model            = config.OLLAMA_MODEL
-        self.vision_model     = getattr(config, 'OLLAMA_VISION_MODEL', self.model)
-        self.text_model       = getattr(config, 'OLLAMA_TEXT_MODEL', self.model)
+        self.model       = config.OLLAMA_MODEL
+        self.text_model  = config.OLLAMA_TEXT_MODEL
         self.context_engine   = context_engine.ContextEngine()
         self.last_llm_call_time = 0
 
@@ -174,7 +177,7 @@ class Observer:
 
             if hide_ui:
                 self.signals.prepare_capture.emit()
-                time.sleep(0.3)
+                time.sleep(0.1)
 
             mode = self.context_engine.get_context_snapshot().get('mode_primary', 'general')
 
@@ -221,12 +224,16 @@ class Observer:
             image.save(output, format='PNG')
             return output.getvalue()
 
-    def hash_screen(self, image):
-        if image is None:
-            return None
+    def hash_and_encode_screen(self, image):
+        """Encodes image to PNG once, returns (hash, bytes). Never encodes twice."""
         buf = io.BytesIO()
         image.save(buf, format='PNG')
-        return hashlib.md5(buf.getvalue()).hexdigest()
+        data = buf.getvalue()
+        thumb = image.resize((320, 180))
+        tbuf = io.BytesIO()
+        thumb.save(tbuf, format='PNG')
+        h = hashlib.md5(tbuf.getvalue()).hexdigest()
+        return h, data
 
     # ------------------------------------------------------------------
     # OCR
@@ -256,13 +263,16 @@ class Observer:
 
     def resume(self):
         self.paused = False
+        self.last_frame_hash  = None
+        self.last_screen_hash = None
+        self.last_ocr_text    = ""
         print("Observer Resumed.")
 
     # ------------------------------------------------------------------
     # Analysis  ← stronger OCR priority, ignore UI chrome
     # ------------------------------------------------------------------
 
-    def analyze(self, image, context_text="", snapshot=None):
+    def analyze(self, image, context_text="", snapshot=None, precomputed_ocr=None, image_bytes=None):
         if self.paused or not image:
             return None
 
@@ -284,11 +294,12 @@ class Observer:
         except Exception:
             pass
 
-        image_data   = self._image_to_bytes(image)
-        if image_data is None:
+        if image_bytes is None:
+            image_bytes = self._image_to_bytes(image)
+        if image_bytes is None:
             return None
 
-        current_hash = hashlib.md5(image_data).hexdigest()
+        current_hash = hashlib.md5(image_bytes).hexdigest()
         if current_hash == self.last_frame_hash:
             print("Observer: Screen hash match. Skipping.")
             return None
@@ -317,10 +328,12 @@ class Observer:
         )
 
         ocr_text = ""
-        if need_ocr:
+        if precomputed_ocr is not None:
+            ocr_text = precomputed_ocr
+        elif need_ocr:
             try:
                 from ocr_engine import extract_text_for_window
-                ocr_img  = Image.open(io.BytesIO(image_data))
+                ocr_img  = Image.open(io.BytesIO(image_bytes))
                 ocr_text = extract_text_for_window(
                     image        = ocr_img,
                     window_title = win_title,
@@ -337,7 +350,7 @@ class Observer:
             print(f"Observer: Skipping OCR for {mode_primary} mode.")
 
         self.last_ocr_text             = ocr_text
-        self.last_proactive_screenshot = image_data
+        self.last_proactive_screenshot = image_bytes
 
         # ── Build rich context hint from parsed title fields ──────────
         context_hint_parts = []
@@ -434,9 +447,9 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
             elif mode_primary == 'browser':
                 system_prompt = config.READING_SYSTEM_PROMPT
 
-            response = ollama.chat(model=self.vision_model, messages=[
+            response = _get_ollama().chat(model=self.model, messages=[
                 {'role': 'system', 'content': system_prompt},
-                {'role': 'user',   'content': full_prompt, 'images': [image_data]},
+                {'role': 'user',   'content': full_prompt, 'images': [image_bytes]},
             ])
             text = response['message']['content'].strip()
             print(f"Observer RAW: {text[:150]}…")
@@ -461,6 +474,129 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
             print(f"Observer Analyze Error: {e}")
             return None
 
+    def analyze_picked_region(self, image_bytes: bytes, ocr_text: str, x: int, y: int) -> dict:
+        """
+        Analyze a user-picked screen region and return a rich suggestion payload.
+        Called when user uses Pick to Ask feature.
+        """
+        try:
+            snapshot = self.context_engine.get_context_snapshot()
+            win_title    = snapshot.get('window_title', '')
+            page_title   = snapshot.get('page_title', '')
+            site_name    = snapshot.get('site_name', '')
+            mode_primary = snapshot.get('mode_primary', 'general')
+
+            # Build a focused prompt based on the picked region content
+            ocr_section = (
+                f"PICKED ELEMENT TEXT (user explicitly selected this):\n"
+                f"{'=' * 50}\n{ocr_text}\n{'=' * 50}"
+                if ocr_text
+                else "(No text in selected region — visual element only)"
+            )
+
+            context_label = page_title or site_name or win_title or "screen"
+
+            full_prompt = f"""The user explicitly picked/clicked a screen element to ask about it.
+
+ACTIVE WINDOW: {win_title}
+CONTENT: {context_label}
+
+{ocr_section}
+
+TASK: Based on the picked element content above, suggest the 3 most useful
+actions the user might want to do with this specific content.
+
+RULES:
+- Base suggestions entirely on the PICKED ELEMENT TEXT
+- Be very specific — mention actual content from the text
+- reason must describe what was picked in ≤10 words
+- If it looks like code: suggest explain, fix, optimize
+- If it looks like text/writing: suggest improve, summarize, rewrite  
+- If it looks like data/numbers: suggest analyze, explain, calculate
+- If it looks like an error message: suggest fix, explain cause
+- Do NOT describe UI elements or application chrome
+
+OUTPUT JSON ONLY:
+{{
+  "reason": "Picked: [specific description ≤10 words]",
+  "reason_long": "What this element contains and what the user likely wants",
+  "confidence": 0.95,
+  "type": "picked_suggestion",
+  "suggestions": [
+    {{"label": "Action 1", "hint": "Specific action based on content"}},
+    {{"label": "Action 2", "hint": "Specific action based on content"}},
+    {{"label": "Action 3", "hint": "Specific action based on content"}}
+  ]
+}}"""
+
+            import config
+            response = _get_ollama().chat(
+                model=self.text_model,
+                messages=[
+                    {'role': 'system', 'content': config.SYSTEM_PROMPT},
+                    {'role': 'user',   'content': full_prompt,
+                     'images': [image_bytes]},
+                ]
+            )
+            text = response['message']['content'].strip()
+
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0].strip()
+            elif "```" in text:
+                text = text.split("```")[1].split("```")[0].strip()
+
+            import json
+            payload = json.loads(text)
+            payload["screen_context"] = ocr_text
+            payload["window_title"]   = win_title
+            payload["page_title"]     = page_title
+            payload["site_name"]      = site_name
+            payload["picked_image"]   = image_bytes
+            payload["type"]           = "picked_suggestion"
+            return payload
+
+        except Exception as e:
+            print(f"analyze_picked_region error: {e}")
+            # Fallback payload based purely on OCR — no LLM needed
+            import json
+            has_code  = any(k in ocr_text for k in ["def ", "import ", "class ", "=>", "{}"])
+            has_error = any(k in ocr_text.lower() for k in ["error", "exception", "traceback", "failed"])
+
+            if has_error:
+                suggestions = [
+                    {"label": "Fix Error",    "hint": f"Fix this error: {ocr_text[:100]}"},
+                    {"label": "Explain",      "hint": "Explain what caused this error"},
+                    {"label": "Find Solution","hint": "Find the solution to this error"},
+                ]
+                reason = "Error message detected"
+            elif has_code:
+                suggestions = [
+                    {"label": "Explain Code", "hint": f"Explain this code: {ocr_text[:100]}"},
+                    {"label": "Find Issues",  "hint": "Find bugs or issues in this code"},
+                    {"label": "Optimize",     "hint": "Suggest improvements for this code"},
+                ]
+                reason = "Code snippet selected"
+            else:
+                suggestions = [
+                    {"label": "Explain",      "hint": f"Explain: {ocr_text[:100]}"},
+                    {"label": "Summarize",    "hint": "Summarize this content"},
+                    {"label": "Ask Question", "hint": "I have a question about this"},
+                ]
+                reason = f"Selected: {ocr_text[:40]}" if ocr_text else "Region selected"
+
+            return {
+                "type":           "picked_suggestion",
+                "reason":         reason,
+                "reason_long":    ocr_text[:120] if ocr_text else "Visual element selected",
+                "confidence":     0.9,
+                "suggestions":    suggestions,
+                "screen_context": ocr_text,
+                "window_title":   snapshot.get('window_title', ''),
+                "page_title":     snapshot.get('page_title', ''),
+                "site_name":      snapshot.get('site_name', ''),
+                "picked_image":   image_bytes,
+            }
+
     # ------------------------------------------------------------------
     # Session title generation
     # ------------------------------------------------------------------
@@ -469,7 +605,7 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
         if not user_text:
             return
         try:
-            response = ollama.chat(model=self.text_model, messages=[{
+            response = _get_ollama().chat(model=self.text_model, messages=[{
                 'role': 'user',
                 'content': (
                     f"Summarize this user query into a short 3-5 word title: '{user_text}'. "
@@ -574,10 +710,15 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                     f"MODE: {pc_mode}\n"
                 )
                 if pc_ocr:
-                    prompt_context += f"\nSCREEN TEXT:\n{pc_ocr[:2000]}\n"
+                    prompt_context += f"\nSCREEN TEXT (full page content — use this as primary source):\n{pc_ocr[:4000]}\n"
 
-                if proactive_context.get('screenshot'):
+                # Never send image if OCR text is available — llava describes instead of acting on text
+                pc_has_text = bool(proactive_context.get('screen_context', '').strip())
+                if proactive_context.get('screenshot') and not pc_has_text:
                     current_images.append(proactive_context['screenshot'])
+                    print("Streaming: Sending image (no OCR text available)")
+                else:
+                    print("Streaming: Text-only mode — skipping image to improve response quality")
 
                 mode_primary  = pc_mode
                 system_prompt = (
@@ -595,14 +736,17 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                 ]
                 is_vision_request = any(k in user_query.lower() for k in vision_keywords)
 
-                img = self.capture_screen(force=True, hide_ui=True)
-                if img:
-                    image_bytes = self._image_to_bytes(img)
-                    ocr_text    = self.extract_text_from_screen(img)
-                    if ocr_text:
-                        prompt_context = f"\n\n[SCREEN CONTEXT (OCR)]:\n{ocr_text[:3000]}\n"
-                    if is_vision_request and image_bytes:
+                if is_vision_request:
+                    img = self.capture_screen(force=True, hide_ui=True)
+                    if img:
+                        image_bytes = self._image_to_bytes(img)
+                        ocr_text    = self.extract_text_from_screen(img)
+                        if ocr_text:
+                            prompt_context = f"\n\n[SCREEN CONTEXT (OCR) — treat as ground truth of page content]:\n{ocr_text[:4000]}\n"
                         current_images.append(image_bytes)
+                else:
+                    if self.last_ocr_text:
+                        prompt_context = f"\n\n[SCREEN CONTEXT (OCR) — treat as ground truth of page content]:\n{self.last_ocr_text[:4000]}\n"
 
                 snap         = self.context_engine.get_context_snapshot()
                 window_title = snap.get('window_title', 'Unknown')
@@ -628,9 +772,7 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                 }
                 system_prompt = prompt_map.get(mode_primary, config.CHAT_SYSTEM_PROMPT)
 
-            # Determine which model to use
-            current_model = self.vision_model if current_images else self.text_model
-            print(f"Streaming ({current_model}) mode={mode_primary}")
+            print(f"Streaming mode={mode_primary}")
 
             user_content = f"{prompt_context}\nUSER: {user_query}"
             new_message  = {'role': 'user', 'content': user_content}
@@ -646,8 +788,10 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                     daemon=True,
                 ).start()
 
+            # Use vision model if images present, text model otherwise
+            chat_model = self.model if current_images else self.text_model
             messages_payload = [{'role': 'system', 'content': system_prompt}] + self.chat_history
-            stream = ollama.chat(model=current_model, messages=messages_payload, stream=True)
+            stream = _get_ollama().chat(model=chat_model, messages=messages_payload, stream=True)
 
             full_response = ""
             for chunk in stream:
@@ -701,7 +845,7 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
         )
 
         try:
-            response = ollama.chat(model=self.text_model, messages=[
+            response = _get_ollama().chat(model=self.text_model, messages=[
                 {'role': 'system', 'content': config.DEV_SYSTEM_PROMPT},
                 {'role': 'user',   'content': error_prompt},
             ])
@@ -747,6 +891,9 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
     # ------------------------------------------------------------------
 
     def loop(self):
+        # LEGACY: This loop is superseded by CopilotController (copilot_controller.py).
+        # CopilotController calls capture_screen() and analyze() directly.
+        # This method is retained for reference but is NOT called by main.py.
         print("Observer started (Silent Mode)…")
         self.running             = True
         self.last_reported_error_sig = None
@@ -764,7 +911,7 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                     time.sleep(1)
                     continue
 
-                current_hash = self.hash_screen(screenshot)
+                current_hash, image_bytes = self.hash_and_encode_screen(screenshot)
                 if current_hash == self.last_screen_hash:
                     self._check_syntax_errors()
                     time.sleep(config.CHECK_INTERVAL)
@@ -795,7 +942,7 @@ OUTPUT JSON ONLY — no prose, no markdown wrapper:
                 check_visual = not (mode_primary == 'developer' and ctx.get('error'))
 
                 if check_visual:
-                    payload = self.analyze(screenshot, snapshot=ctx)
+                    payload = self.analyze(screenshot, snapshot=ctx, precomputed_ocr=ocr_text, image_bytes=image_bytes)
 
                     if payload:
                         reason     = payload.get('reason', '')

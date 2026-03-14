@@ -14,6 +14,8 @@ CHECK_INTERVAL      = 1.0   # Seconds between proactive loop ticks
 PROACTIVE_THRESHOLD = 0.35  # Min confidence to show overlay suggestion
 WRITING_THRESHOLD   = 0.35  # Lower threshold for document/writing mode
 
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # SYSTEM_PROMPT  — General proactive observer (fallback for unclassified windows)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -60,6 +62,9 @@ You are Cora, an intelligent writing assistant observing a document.
 
 OCR text extracted from the document is your PRIMARY source. Use it to
 understand what the user is writing and offer specific, actionable help.
+
+If SELECTED TEXT is provided below, it is the HIGHEST PRIORITY context —
+the user explicitly highlighted this text. Base your suggestion on it first.
 
 WHAT TO DETECT:
 1. Grammar or spelling errors → suggest fix

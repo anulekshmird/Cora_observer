@@ -3,6 +3,13 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# Callback storage
+_diagnostics_callback = None
+
+def set_diagnostics_callback(cb):
+    global _diagnostics_callback
+    _diagnostics_callback = cb
+
 class BridgeHandler(BaseHTTPRequestHandler):
     context_engine = None # Class variable or set via server
 
@@ -33,6 +40,38 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 print(f"Bridge Server Error: {e}")
                 self.send_response(500)
                 self.end_headers()
+        elif self.path == '/diagnostics':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                errors = data.get('errors', [])
+                error_count = data.get('error_count', 0)
+                
+                print(f'[BRIDGE] Diagnostics: {error_count} error(s)')
+                
+                if error_count > 0:
+                    # Build rich error context
+                    error_lines = []
+                    for e in errors[:5]:  # max 5 errors
+                        error_lines.append(
+                            f"• {e['file']} line {e['line']}: {e['message']}"
+                        )
+                    error_text = '\n'.join(error_lines)
+                    print(f'[BRIDGE] Errors:\n{error_text}')
+
+                    # Notify main app via callback
+                    if _diagnostics_callback:
+                        _diagnostics_callback(errors, error_count, error_text)
+                
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b'{"status": "ok"}')
+            except Exception as e:
+                print(f'[BRIDGE] Diagnostics error: {e}')
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'{"status": "error"}')
         else:
             self.send_response(404)
             self.end_headers()

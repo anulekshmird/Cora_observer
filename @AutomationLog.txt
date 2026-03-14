@@ -1,0 +1,540 @@
+
+module 'comtypes.gen._00020430_0000_0000_C000_000000000046_0_2_0' has no attribute 'IUnknown'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen._00020430_0000_0000_C000_000000000046_0_2_0' has no attribute 'IUnknown'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+unterminated string literal (detected at line 940) (UIAutomationClient.py, line 940)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+cannot import name 'ProviderOptions_OverrideProvider' from 'comtypes.gen._944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0' (c:\Users\ADITHYA\OneDrive\Desktop\Cora antig\.venv\Lib\site-packages\comtypes\gen\_944DE083_8FB8_45CF_BCB7_C477ACB2F897_0_1_0.py)
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+module 'comtypes.gen.UIAutomationClient' has no attribute 'IUIAutomation'
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
