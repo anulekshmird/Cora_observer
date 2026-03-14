@@ -354,20 +354,22 @@ class ProactiveBubble(QWidget):
         self.orb_btn.setFixedSize(self._orb_size, self._orb_size)
         self.orb_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.orb_btn.clicked.connect(self._on_orb_clicked)
+        self.orb_btn.setText("")  # No text ever
 
-        # Set icon.png as orb image
+        # Load icon.png
         import os
-        icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        from PyQt6.QtGui import QIcon, QPixmap
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.png')
         if os.path.exists(icon_path):
-            from PyQt6.QtGui import QIcon, QPixmap
-            pixmap = QPixmap(icon_path).scaled(
-                self._orb_size - 8,
-                self._orb_size - 8,
+            px = QPixmap(icon_path).scaled(
+                self._orb_size - 4,
+                self._orb_size - 4,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             )
-            self.orb_btn.setIcon(QIcon(pixmap))
-            self.orb_btn.setIconSize(QSize(self._orb_size - 8, self._orb_size - 8))
+            self.orb_btn.setIcon(QIcon(px))
+            self.orb_btn.setIconSize(QSize(self._orb_size - 4, self._orb_size - 4))
+
         self._set_orb_style('#111827', '#1e3a5f')
 
         # ── Assemble ───────────────────────────────────────
@@ -388,15 +390,14 @@ class ProactiveBubble(QWidget):
             QPushButton {{
                 background: {bg};
                 border: {border_width} solid {border_color};
-                border-radius: {self._orb_size//2}px;
+                border-radius: {self._orb_size // 2}px;
             }}
             QPushButton:hover {{
                 background: #1e3a5f;
                 border: 2px solid #60a5fa;
             }}
         """)
-        # Use icon.png — no emoji text
-        self.orb_btn.setText("")
+        # Never set text — icon only
 
     # ── State machine ─────────────────────────────────────────
 
@@ -406,7 +407,6 @@ class ProactiveBubble(QWidget):
         if state == self.STATE_IDLE:
             self._pulse_timer.stop()
             self._set_orb_style('#111827', '#1e3a5f')
-            self.orb_btn.setText("🤖")
 
         elif state == self.STATE_PULSING:
             self._pulse_step = 0
@@ -421,34 +421,36 @@ class ProactiveBubble(QWidget):
         elif state == self.STATE_EXPANDED:
             self._pulse_timer.stop()
             self._set_orb_style('#1e3a5f', '#3b82f6')
-            self.orb_btn.setText("🤖")
 
     def _pulse_tick(self):
         self._pulse_step += 1
 
         if self._state == self.STATE_ERROR:
-            # Aggressive red pulse — alternates bright red and dark red
             if self._pulse_step % 2 == 0:
                 self.orb_btn.setStyleSheet(f"""
                     QPushButton {{
                         background: #7f1d1d;
                         border: 3px solid #ef4444;
-                        border-radius: {self._orb_size//2}px;
-                        font-size: 22px;
+                        border-radius: {self._orb_size // 2}px;
+                    }}
+                    QPushButton:hover {{
+                        background: #991b1b;
+                        border: 3px solid #fca5a5;
                     }}
                 """)
-                self.orb_btn.setText("🔴")
             else:
                 self.orb_btn.setStyleSheet(f"""
                     QPushButton {{
                         background: #dc2626;
-                        border: 3px solid #fca5a5;
-                        border-radius: {self._orb_size//2}px;
-                        font-size: 22px;
+                        border: 4px solid #fca5a5;
+                        border-radius: {self._orb_size // 2}px;
+                    }}
+                    QPushButton:hover {{
+                        background: #ef4444;
+                        border: 4px solid #fee2e2;
                     }}
                 """)
-                self.orb_btn.setText("🔴")
-            # Error keeps pulsing until dismissed — no timeout
+            # Keep error pulsing — no timeout
             return
 
         # Normal blue pulse — stops after 6 blinks
@@ -608,11 +610,10 @@ class ProactiveBubble(QWidget):
             self.adjustSize()
 
     def _on_dismiss(self):
-        self._current_data         = None
-        self.is_expanded           = False
-        self.is_read_more_expanded = False if hasattr(self, 'is_read_more_expanded') else False
+        self._current_data = None
+        self.is_expanded   = False
         self.panel.hide()
-        self._set_state(self.STATE_IDLE)  # This resets orb color and stops pulse
+        self._set_state(self.STATE_IDLE)
         self.adjustSize()
         self.dismissed.emit()
 

@@ -223,8 +223,8 @@ class ContextExtractor:
         def _run():
             import time
             if self._busy:
-                # Force reset if stuck for more than 8s
-                if hasattr(self, '_busy_since') and time.time() - self._busy_since > 8.0:
+                # Force reset if stuck for more than 5s (reduced from 8s)
+                if hasattr(self, '_busy_since') and time.time() - self._busy_since > 5.0:
                     print('[EXTRACTOR] Force reset busy flag')
                     self._busy = False
                 else:

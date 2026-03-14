@@ -17,6 +17,7 @@ class GrammarEngine:
         self._last_check   = 0
         self._check_interval = 15  # seconds
         self._callback    = None
+        self._pending_result = None
         self._lock        = threading.Lock()
         print("[GRAMMAR] Engine initialized")
 
@@ -61,10 +62,29 @@ class GrammarEngine:
 
             if parsed and self._callback:
                 print(f"[GRAMMAR] Issues found: {parsed.get('issue_count', 0)}")
-                self._callback(parsed)
+                # Must call callback on main thread via stored reference
+                self._pending_result = parsed
+                self._trigger_callback()
 
         except Exception as e:
             print(f"[GRAMMAR] Analysis error: {e}")
+
+    def _trigger_callback(self):
+        """Safely call callback — handles thread crossing."""
+        if not self._callback or not self._pending_result:
+            return
+        result = self._pending_result
+        self._pending_result = None
+        try:
+            # Try Qt main thread dispatch
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(0, lambda: self._callback(result))
+        except Exception:
+            # Fallback direct call
+            try:
+                self._callback(result)
+            except Exception as e:
+                print(f"[GRAMMAR] Callback error: {e}")
 
     def _build_grammar_prompt(self, text: str, source: str) -> str:
         context = {

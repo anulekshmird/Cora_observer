@@ -273,6 +273,13 @@ class CoraApp(QObject):
 
             tl = title.lower()
 
+            # Silent terminal skip
+            terminal_skip = ['python', 'powershell', 'command prompt',
+                             'windows terminal', 'cmd']
+            if any(k == tl.strip() or tl.strip().startswith(k)
+                   for k in terminal_skip):
+                return
+
             hard_skip = [
                 'cora ai', 'cora picker', 'cora suggestion',
                 'snipping tool', 'task switching', 'task manager',
@@ -283,30 +290,33 @@ class CoraApp(QObject):
                 # NOTE: claude, chatgpt, gemini NOT in skip list anymore
             ]
 
-            # Separate exact skip for antigravity planning window only
-            antigravity_skip = [
-                'antigravity - implementation',
-                'antigravity - walkthrough',
-                'antigravity - settings',
-                'antigravity - icon.png',
-                'antigravity - main',
-                'antigravity - .env',
-                'antigravity - journal',
-                'antigravity - readme',
-            ]
+            # Antigravity skip — only skip planning docs
+            # NEVER skip if window has VS Code problem count
+            import re as _re_skip
+            has_vscode_problem = bool(_re_skip.search(r'\d+\s+problem', tl))
+
+            if has_vscode_problem:
+                # Always process — VS Code reported an error
+                print(f'[OBSERVE] VS Code error in title — processing: {title[:50]}')
+            else:
+                antigravity_skip = [
+                    'antigravity - implementation',
+                    'antigravity - walkthrough',
+                    'antigravity - settings',
+                    'antigravity - icon',
+                    'antigravity - main',
+                    'antigravity - .env',
+                    'antigravity - journal',
+                    'antigravity - readme',
+                ]
+                if any(k in tl for k in antigravity_skip):
+                    print(f'[OBSERVE] Hard skip antigravity: {title[:40]}')
+                    return
 
             if any(k in tl for k in hard_skip):
                 print(f'[SWITCH] Hard skip: {title[:40]}')
                 return
 
-            # For antigravity skip — only skip if it's a planning doc, not a code file
-            if any(k in tl for k in antigravity_skip):
-                # Extra check — don't skip if it's actually a code file with error
-                import re as _re
-                has_problem = bool(_re.search(r'\d+\s+problem', tl))
-                if not has_problem:
-                    print(f'[SWITCH] Hard skip antigravity: {title[:40]}')
-                    return
 
             import time
             now = time.time()
@@ -558,6 +568,22 @@ class CoraApp(QObject):
         print(f"[OBSERVE] Tick: '{current_window[:60]}'")
 
         if not current_window or len(current_window.strip()) < 2:
+            return
+
+        win_lower = current_window.lower()
+
+        # IMMEDIATE skip for terminals — no logging, no processing
+        terminal_skip = [
+            'python', 'powershell', 'command prompt',
+            'windows terminal', 'cmd', 'terminal',
+        ]
+        if any(k == win_lower.strip() or win_lower.strip().startswith(k)
+               for k in terminal_skip):
+            return  # Silent skip — no print
+
+        print(f"[OBSERVE] Tick: '{current_window[:60]}'")
+
+        if not current_window or len(current_window.strip()) < 2:
             print("[OBSERVE] Empty window title — skipping")
             return
 
@@ -577,28 +603,26 @@ class CoraApp(QObject):
             # NOTE: claude, chatgpt, gemini NOT in skip list anymore
         ]
 
-        # Separate exact skip for antigravity planning window only
-        antigravity_skip = [
-            'antigravity - implementation',
-            'antigravity - walkthrough',
-            'antigravity - settings',
-            'antigravity - icon.png',
-            'antigravity - main',
-            'antigravity - .env',
-            'antigravity - journal',
-            'antigravity - readme',
-        ]
+        # Antigravity skip — only skip planning docs
+        # NEVER skip if window has VS Code problem count
+        import re as _re_skip
+        has_vscode_problem = bool(_re_skip.search(r'\d+\s+problem', win_lower))
 
-        if any(k in win_lower for k in hard_skip):
-            print(f'[OBSERVE] Hard skip: {current_window[:40]}')
-            return
-
-        # For antigravity skip — only skip if it's a planning doc, not a code file
-        if any(k in win_lower for k in antigravity_skip):
-            # Extra check — don't skip if it's actually a code file with error
-            import re as _re
-            has_problem = bool(_re.search(r'\d+\s+problem', win_lower))
-            if not has_problem:
+        if has_vscode_problem:
+            # Always process — VS Code reported an error
+            print(f'[OBSERVE] VS Code error in title — processing: {current_window[:50]}')
+        else:
+            antigravity_skip = [
+                'antigravity - implementation',
+                'antigravity - walkthrough',
+                'antigravity - settings',
+                'antigravity - icon',
+                'antigravity - main',
+                'antigravity - .env',
+                'antigravity - journal',
+                'antigravity - readme',
+            ]
+            if any(k in win_lower for k in antigravity_skip):
                 print(f'[OBSERVE] Hard skip antigravity: {current_window[:40]}')
                 return
 
@@ -807,18 +831,21 @@ class CoraApp(QObject):
         if not best:
             return
 
+        # Don't call AI for tiny context — not enough to work with
+        if len(best.strip()) < 30 and ctx.app == 'general':
+            print(f'[SUGGEST] Too little context ({len(best)}ch) — skipping')
+            return
+
         print(f'[SUGGEST] ✓ Calling AI for app={ctx.app} text={len(best)}ch')
         self.ctx_manager.update(ctx)
 
-        # Grammar check for writing apps
+        # Grammar check ONLY for word and messaging — never general/editor/terminal
         if ctx.app == 'word':
             self.grammar_engine.check_text(best, source='word')
         elif ctx.app == 'messaging':
             tl = ctx.window_title.lower()
             if any(k in tl for k in ['whatsapp', 'telegram']):
                 self.grammar_engine.check_text(best, source='whatsapp')
-        elif ctx.app == 'general' and len(best) > 50:
-            self.grammar_engine.check_text(best, source='ocr')
 
         # Update bubble with real context-aware chips
         self._update_bubble_chips(ctx, best)
