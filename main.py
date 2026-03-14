@@ -221,9 +221,14 @@ class CoraApp(QObject):
             self._on_chat_closed()
         else:
             self.is_chat_active = True
-            if hasattr(self, 'sys_observer'):
-                self.sys_observer.stop() # Pause proactive
+            # Do NOT stop sys_observer — just pause suggestions
+            # if hasattr(self, 'sys_observer'):
+            #     self.sys_observer.stop()  # REMOVE THIS LINE — causes GC crash
             
+            self.chat_win.setWindowFlags(
+                Qt.WindowType.Window |
+                Qt.WindowType.WindowStaysOnTopHint
+            )
             self.chat_win.show()
             self.chat_win.activateWindow()
             self.chat_win.raise_()
@@ -283,19 +288,25 @@ class CoraApp(QObject):
                 'antigravity - implementation',
                 'antigravity - walkthrough',
                 'antigravity - settings',
-                'antigravity - icon',
+                'antigravity - icon.png',
                 'antigravity - main',
-                'antigravity - test',
                 'antigravity - .env',
+                'antigravity - journal',
+                'antigravity - readme',
             ]
 
             if any(k in tl for k in hard_skip):
                 print(f'[SWITCH] Hard skip: {title[:40]}')
                 return
 
+            # For antigravity skip — only skip if it's a planning doc, not a code file
             if any(k in tl for k in antigravity_skip):
-                print(f'[SWITCH] Hard skip antigravity: {title[:40]}')
-                return
+                # Extra check — don't skip if it's actually a code file with error
+                import re as _re
+                has_problem = bool(_re.search(r'\d+\s+problem', tl))
+                if not has_problem:
+                    print(f'[SWITCH] Hard skip antigravity: {title[:40]}')
+                    return
 
             import time
             now = time.time()
@@ -571,19 +582,25 @@ class CoraApp(QObject):
             'antigravity - implementation',
             'antigravity - walkthrough',
             'antigravity - settings',
-            'antigravity - icon',
+            'antigravity - icon.png',
             'antigravity - main',
-            'antigravity - test',
             'antigravity - .env',
+            'antigravity - journal',
+            'antigravity - readme',
         ]
 
         if any(k in win_lower for k in hard_skip):
             print(f'[OBSERVE] Hard skip: {current_window[:40]}')
             return
 
+        # For antigravity skip — only skip if it's a planning doc, not a code file
         if any(k in win_lower for k in antigravity_skip):
-            print(f'[OBSERVE] Hard skip antigravity: {current_window[:40]}')
-            return
+            # Extra check — don't skip if it's actually a code file with error
+            import re as _re
+            has_problem = bool(_re.search(r'\d+\s+problem', win_lower))
+            if not has_problem:
+                print(f'[OBSERVE] Hard skip antigravity: {current_window[:40]}')
+                return
 
         # Skip if chat is open
         if self.chat_win.isVisible():
@@ -1202,7 +1219,7 @@ class CoraApp(QObject):
 
     def _on_suggestion_ready(self, data: dict):
         if self._pick_active:
-            print('[SUGGEST] Pick active — blocking AI suggestion')
+            print('[SUGGEST] Pick active — blocking AI overwrite')
             return
         print(f"[UI] Suggestion ready: {data.get('reason','')[:50]}")
         self._show_bubble_debounced(data)
@@ -1277,28 +1294,27 @@ class CoraApp(QObject):
         self.app.quit()
 
     def start_pick_to_ask(self):
-        from screen_picker import ScreenPicker
-        print("Pick to Ask: Launching...")
-        # Hide CORA UI so it doesn't get picked
-        self.bubble.hide()
-        if self.chat_win.isVisible():
-            self.chat_win.hide()
-            
-        def _launch_picker_delayed():
-            self._picker_instance = ScreenPicker(None)
-            self._picker_instance.region_selected.connect(self.on_region_picked)
-            self._picker_instance.cancelled.connect(self.on_pick_cancelled)
-            self._picker_instance.showFullScreen()
+        print('[PICK] start_pick_to_ask called')
+        # Do NOT set _pick_active here — only set it when region is received
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(200, self._launch_picker_delayed)
 
-        QTimer.singleShot(200, _launch_picker_delayed)
+    def _launch_picker_delayed(self):
+        from screen_picker import ScreenPicker
+        picker = ScreenPicker(None)
+        picker.region_selected.connect(self.on_region_picked)
+        picker.cancelled.connect(self.on_pick_cancelled)
+        self._picker_instance = picker  # strong reference
+        picker.showFullScreen()
+        print('[PICK] Picker shown')
+
+    def on_pick_cancelled(self):
+        print('[PICK] Cancelled')
+        self._picker_instance = None
+        self._pick_active     = False
 
     def on_region_picked(self, x: int, y: int, image_bytes: bytes, ocr_text: str):
         print(f'[PICK] ✓ on_region_picked called: ocr={len(ocr_text)}ch')
-
-        # Lock out AI suggestions for 30s so picker chips stay visible
-        self._pick_active = True
-        from PyQt6.QtCore import QTimer
-        QTimer.singleShot(30000, self._clear_pick_lock)
 
         import time
         import re
@@ -1410,19 +1426,26 @@ class CoraApp(QObject):
         preview = text[:50] + "..." if len(text) > 50 else text
         payload = {
             "type":        content_type,
-            "reason":      f"Selected: {preview}" if text else "Region selected",
+            "reason":      f"📌 {preview}" if text else "Region selected",
             "reason_long": text[:200],
             "confidence":  0.98,
             "suggestions": chips,
         }
 
-        # Force show picker payload — bypass debounce hash check
-        self._last_bubble_payload_hash = None  # force update
+        # Set pick lock AFTER building payload — prevent AI from overwriting
+        self._pick_active              = True
+        self._last_bubble_payload_hash = None
+
+        print(f'[PICK] Showing payload: {payload["reason"][:50]}')
+
+        # Show bubble directly — bypass all debouncing
         from PyQt6.QtCore import QTimer
         QTimer.singleShot(0,   lambda: self.bubble.show_suggestion(payload))
         QTimer.singleShot(50,  lambda: self.bubble.show())
         QTimer.singleShot(100, lambda: self.bubble.raise_())
-        print(f'[PICK] Payload sent to bubble: {payload["reason"][:50]}')
+
+        # Clear lock after 30s
+        QTimer.singleShot(30000, self._clear_pick_lock)
 
     def _clear_pick_lock(self):
         self._pick_active = False

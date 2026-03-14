@@ -271,6 +271,7 @@ class ContextExtractor:
 
     async def _from_window(self, data: dict) -> 'Context':
         import time
+        import re  # Move to top — fixes 'cannot access local variable re' error
         title = data.get('window_title', '')
         tl    = title.lower()
         ts    = data.get('timestamp', time.time())
@@ -388,7 +389,6 @@ class ContextExtractor:
             
             # Detect problems in VS Code title
             problem_count = 0
-            import re
             prob_match = re.search(r'(\d+)\s+problem', title.lower())
             if prob_match:
                 problem_count = int(prob_match.group(1))

@@ -24,6 +24,7 @@ class AIEngine(QObject):
         self._last_call_time = 0
         self._min_call_interval = 15.0
         self._retry_after    = 0
+        self._stop_requested = False
 
         # Use new google-genai SDK
         try:
@@ -245,8 +246,14 @@ Each chip must be something I can answer RIGHT NOW with text only."""
         }
 
     # ── Chat response ─────────────────────────────────────────────────────
+    def stop_stream(self):
+        """Stop current streaming generation."""
+        self._stop_requested = True
+        print('[AI] Stop requested')
+
     def stream_chat_async(self, message: str, ctx, history: list = None):
         import threading
+        self._stop_requested = False  # Reset on new stream
         print(f'[AI] stream_chat_async: message={len(message)}ch')
         prompt = self._build_chat_prompt(message, ctx, history or [])
         print(f'[AI] Built prompt: {len(prompt)}ch')
@@ -257,7 +264,6 @@ Each chip must be something I can answer RIGHT NOW with text only."""
         )
         t.start()
 
-    # _stream_chat replaced by direct threaded call to _stream_llm in stream_chat_async
 
     def _build_chat_prompt(self, message: str, ctx, history: list = None) -> str:
         if history is None:
@@ -454,6 +460,9 @@ RULES:
                         temperature       = 0.7,
                     )
                 ):
+                    if self._stop_requested:
+                        print('[AI] Stream stopped by user')
+                        break
                     try:
                         text = chunk.text
                         if text:
@@ -471,6 +480,9 @@ RULES:
                     stream=True,
                 )
                 for chunk in response:
+                    if self._stop_requested:
+                        print('[AI] Stream stopped by user')
+                        break
                     try:
                         if chunk.text:
                             self.stream_chunk.emit(chunk.text)

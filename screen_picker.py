@@ -202,21 +202,27 @@ class ScreenPicker(QWidget):
             import mss
             from PIL import Image
             import io
+            import time
+
+            # Extra delay to ensure picker overlay is fully hidden
+            time.sleep(0.3)
 
             print(f'[PICK] Capture: left={left} top={top} w={width} h={height}')
 
             with mss.mss() as sct:
+                # Use monitor 1 (primary) not 0 (all monitors combined)
+                # This avoids coordinate offset issues
+                mon = sct.monitors[1]
                 region = {
-                    "top":    top,
-                    "left":   left,
-                    "width":  max(40, width),
-                    "height": max(20, height),
-                    "mon":    0,
+                    "top":    max(0, top),
+                    "left":   max(0, left),
+                    "width":  min(max(40, width),  mon["width"]  - left),
+                    "height": min(max(20, height), mon["height"] - top),
                 }
                 shot = sct.grab(region)
                 img  = Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
 
-            # Upscale for OCR accuracy
+            # Upscale small captures
             if img.width < 800:
                 scale = max(2, 800 // img.width)
                 img   = img.resize(
@@ -246,7 +252,6 @@ class ScreenPicker(QWidget):
             buf = io.BytesIO()
             img.save(buf, format='PNG')
 
-            content_type = self._detect_content_type(ocr_text)
             self.region_selected.emit(left, top, buf.getvalue(), ocr_text)
             self.close()
 

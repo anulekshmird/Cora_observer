@@ -915,10 +915,10 @@ class ChatWindow(QMainWindow):
         """Append streaming text to current AI response bubble."""
         self._hide_welcome()
         if self._streaming_label is None:
-            # Create new response bubble for this stream
             self._streaming_text  = ""
             self._streaming_label = QLabel()
             self._streaming_label.setWordWrap(True)
+            self._streaming_label.setTextFormat(Qt.TextFormat.RichText)
             self._streaming_label.setTextInteractionFlags(
                 Qt.TextInteractionFlag.TextSelectableByMouse
             )
@@ -931,111 +931,156 @@ class ChatWindow(QMainWindow):
                     font-size: 13px;
                 }
             """)
-            # Add to chat layout
-            # Note: We append to self.chat_display.layout
             container = QWidget()
+            container.setStyleSheet("background: transparent;")
             layout    = QVBoxLayout(container)
             layout.setContentsMargins(0, 0, 0, 4)
             layout.addWidget(self._streaming_label)
-            
-            # Using the chat_display's internal layout
+    
+            # Always insert AFTER last message — before the stretch
             d_layout = self.chat_display.layout
-            d_layout.insertWidget(d_layout.count() - 1, container)
+            # Find the stretch item at the end
+            insert_pos = d_layout.count() - 1  # before stretch
+            if insert_pos < 1:
+                insert_pos = d_layout.count()
+            d_layout.insertWidget(insert_pos, container)
             self._streaming_container = container
-
+    
         self._streaming_text += text
-        self._streaming_label.setText(self._streaming_text)
-
-        # Auto scroll to bottom
+    
+        # Render markdown during streaming
+        rendered = self._render_markdown(self._streaming_text)
+        self._streaming_label.setText(rendered)
+        self._streaming_label.setTextFormat(Qt.TextFormat.RichText)
         self.chat_display.scroll_to_bottom()
 
     def on_stream_done(self):
         if self._streaming_text:
             final_text = self._streaming_text
 
+            # Remove streaming container
             if self._streaming_container:
                 d_layout = self.chat_display.layout
                 d_layout.removeWidget(self._streaming_container)
                 self._streaming_container.deleteLater()
 
+            # Create proper message widget
             msg_widget = self._make_message_widget(final_text, is_user=False)
 
-            # If response has code — add dedicated Copy Code button
+            # Add Copy Code button if code present
             if '```' in final_text:
                 import re
                 code_blocks = re.findall(r'```\w*\n?(.*?)```', final_text, re.DOTALL)
                 if code_blocks:
-                    all_code = '\n\n'.join(code_blocks).strip()
+                    # Join all code blocks with separator
+                    all_code = '\n\n'.join(b.strip() for b in code_blocks)
+
                     code_copy_btn = QPushButton("📋 Copy Code")
-                    code_copy_btn.setFixedHeight(26)
+                    code_copy_btn.setFixedHeight(30)
                     code_copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
                     code_copy_btn.setStyleSheet("""
                         QPushButton {
                             background: rgba(59,130,246,0.15);
                             border: 1px solid #3b82f6;
                             color: #3b82f6;
-                            border-radius: 6px;
-                            padding: 3px 12px;
-                            font-size: 11px;
+                            border-radius: 8px;
+                            padding: 4px 16px;
+                            font-size: 12px;
                             font-weight: bold;
                         }
                         QPushButton:hover {
-                            background: rgba(59,130,246,0.3);
+                            background: rgba(59,130,246,0.35);
                             color: white;
+                            border-color: #60a5fa;
                         }
                     """)
                     code_copy_btn.clicked.connect(
                         lambda: self._copy_text(all_code, code_copy_btn)
                     )
+
                     code_row        = QWidget()
+                    code_row.setStyleSheet("background: transparent;")
                     code_row_layout = QHBoxLayout(code_row)
-                    code_row_layout.setContentsMargins(4, 0, 4, 4)
+                    code_row_layout.setContentsMargins(4, 2, 4, 6)
                     code_row_layout.addStretch()
                     code_row_layout.addWidget(code_copy_btn)
                     msg_widget.layout().addWidget(code_row)
 
-            # Hide regen on previous AI messages
+            # Re-render the bubble label with proper markdown
+            # Find the QLabel inside msg_widget and update it
+            for child in msg_widget.findChildren(QLabel):
+                rendered = self._render_markdown(final_text)
+                child.setText(rendered)
+                child.setTextFormat(Qt.TextFormat.RichText)
+                child.setOpenExternalLinks(True)
+                break
+
+            # Hide regen on all previous AI messages
             for m in self._message_widgets[:-1]:
                 if m['role'] == 'assistant' and hasattr(m['widget'], '_regen_btn'):
                     m['widget']._regen_btn.hide()
 
+            # Insert before stretch — always at end
             d_layout = self.chat_display.layout
-            d_layout.insertWidget(d_layout.count() - 1, msg_widget)
+            insert_pos = d_layout.count() - 1
+            if insert_pos < 0:
+                insert_pos = 0
+            d_layout.insertWidget(insert_pos, msg_widget)
 
         self._streaming_label     = None
         self._streaming_text      = ""
         self._streaming_container = None
         self.set_generating_state(False)
 
+        from PyQt6.QtCore import QTimer
         if hasattr(self, 'chat_display'):
-            from PyQt6.QtCore import QTimer
-            QTimer.singleShot(100, lambda:
-                self.chat_display.verticalScrollBar().setValue(
-                    self.chat_display.verticalScrollBar().maximum()
-                )
-            )
+            QTimer.singleShot(100, self.chat_display.scroll_to_bottom)
 
     def _render_markdown(self, text: str) -> str:
         import re
         html = text
 
-        # Code blocks with copy button
+        # Fenced code blocks — ```lang\ncode\n```
         def replace_code_block(m):
-            lang = m.group(1) or 'code'
-            code = m.group(2).strip()
-            escaped = (code
+            lang    = (m.group(1) or 'code').strip()
+            code    = m.group(2).strip()
+            escaped = (
+                code
                 .replace('&', '&amp;')
                 .replace('<', '&lt;')
-                .replace('>', '&gt;'))
-            return (
-                f'<div style="margin:8px 0;">'
-                f'<div style="background:#0d1117;border:1px solid #30363d;'
-                f'border-radius:8px;padding:12px;'
-                f'font-family:Consolas,Monaco,monospace;font-size:12px;'
-                f'color:#e6edf3;line-height:1.5;white-space:pre-wrap;">'
-                f'{escaped}'
-                f'</div></div>'
+                .replace('>', '&gt;')
+                .replace('"', '&quot;')
             )
+            lang_label = lang.upper() if lang and lang != 'code' else 'CODE'
+            return (
+                f'<div style="margin:10px 0;">'
+                f'<div style="'
+                f'background:#0d1117;'
+                f'border:1px solid #30363d;'
+                f'border-radius:8px;'
+                f'overflow:hidden;'
+                f'">'
+                f'<div style="'
+                f'background:#161b22;'
+                f'color:#8b949e;'
+                f'font-size:11px;'
+                f'font-family:Consolas,monospace;'
+                f'padding:6px 12px;'
+                f'border-bottom:1px solid #30363d;'
+                f'">{lang_label}</div>'
+                f'<div style="'
+                f'padding:14px;'
+                f'font-family:Consolas,Monaco,monospace;'
+                f'font-size:13px;'
+                f'color:#e6edf3;'
+                f'line-height:1.6;'
+                f'white-space:pre-wrap;'
+                f'word-break:break-all;'
+                f'">{escaped}</div>'
+                f'</div>'
+                f'</div>'
+            )
+
         html = re.sub(
             r'```(\w*)\n?(.*?)```',
             replace_code_block,
@@ -1046,9 +1091,14 @@ class ChatWindow(QMainWindow):
         # Inline code
         html = re.sub(
             r'`([^`\n]+)`',
-            r'<code style="background:#0d1117;color:#79c0ff;'
-            r'padding:1px 5px;border-radius:3px;'
-            r'font-family:Consolas,monospace;font-size:12px;">\1</code>',
+            r'<code style="'
+            r'background:#161b22;'
+            r'color:#79c0ff;'
+            r'padding:2px 6px;'
+            r'border-radius:4px;'
+            r'font-family:Consolas,monospace;'
+            r'font-size:12px;'
+            r'">\1</code>',
             html
         )
 
@@ -1058,36 +1108,44 @@ class ChatWindow(QMainWindow):
         # Italic
         html = re.sub(r'\*(.+?)\*', r'<i>\1</i>', html)
 
-        # Headers
-        html = re.sub(r'^### (.+)$',
-            r'<div style="color:#60a5fa;font-weight:bold;'
-            r'margin:6px 0 2px 0;">\1</div>',
-            html, flags=re.MULTILINE)
-        html = re.sub(r'^## (.+)$',
-            r'<div style="color:#60a5fa;font-size:14px;font-weight:bold;'
-            r'margin:8px 0 2px 0;">\1</div>',
-            html, flags=re.MULTILINE)
+        # H3
+        html = re.sub(
+            r'^### (.+)$',
+            r'<div style="color:#60a5fa;font-weight:bold;margin:8px 0 2px 0;">\1</div>',
+            html, flags=re.MULTILINE
+        )
+
+        # H2
+        html = re.sub(
+            r'^## (.+)$',
+            r'<div style="color:#60a5fa;font-size:14px;font-weight:bold;margin:10px 0 2px 0;">\1</div>',
+            html, flags=re.MULTILINE
+        )
 
         # Bullets
         html = re.sub(
             r'^\s*[-•*]\s+(.+)$',
-            r'<div style="padding-left:14px;margin:2px 0;">• \1</div>',
+            r'<div style="padding-left:16px;margin:3px 0;">• \1</div>',
             html, flags=re.MULTILINE
         )
 
         # Numbered list
         html = re.sub(
             r'^\s*(\d+)\.\s+(.+)$',
-            r'<div style="padding-left:14px;margin:2px 0;">\1. \2</div>',
+            r'<div style="padding-left:16px;margin:3px 0;">\1. \2</div>',
             html, flags=re.MULTILINE
         )
 
-        # Newlines
+        # Newlines to <br> — but not inside code blocks (already handled)
         html = html.replace('\n', '<br>')
 
         return (
-            f'<div style="color:#e2e8f0;font-size:13px;'
-            f'line-height:1.6;">{html}</div>'
+            f'<div style="'
+            f'color:#e2e8f0;'
+            f'font-size:13px;'
+            f'line-height:1.7;'
+            f'font-family:Segoe UI,Arial,sans-serif;'
+            f'">{html}</div>'
         )
 
     def _copy_to_clipboard(self, text, btn):
@@ -1166,6 +1224,19 @@ class ChatWindow(QMainWindow):
 
     def add_user(self, text):
         self.chat_display.add_message(text, is_user=True)
+
+    def add_user_message(self, text: str):
+        from PyQt6.QtCore import QTimer
+        self._hide_welcome()
+        self._last_user_message = text
+        widget = self._make_message_widget(text, is_user=True)
+        # Insert before stretch
+        d_layout  = self.chat_display.layout
+        insert_pos = d_layout.count() - 1
+        if insert_pos < 0:
+            insert_pos = 0
+        d_layout.insertWidget(insert_pos, widget)
+        QTimer.singleShot(50, self.chat_display.scroll_to_bottom)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

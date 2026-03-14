@@ -7,7 +7,7 @@ from PyQt6.QtGui import QIcon, QPainter, QColor, QBrush, QPainterPath
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFrame, QGraphicsOpacityEffect,
-    QLineEdit
+    QLineEdit, QSizePolicy
 )
 
 
@@ -223,8 +223,8 @@ class ProactiveBubble(QWidget):
         self.panel.hide()
 
         panel_layout = QVBoxLayout(self.panel)
-        panel_layout.setContentsMargins(16, 14, 16, 14)
-        panel_layout.setSpacing(10)
+        panel_layout.setContentsMargins(14, 12, 14, 12)
+        panel_layout.setSpacing(8)
 
         # Title row
         title_row = QHBoxLayout()
@@ -354,7 +354,21 @@ class ProactiveBubble(QWidget):
         self.orb_btn.setFixedSize(self._orb_size, self._orb_size)
         self.orb_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.orb_btn.clicked.connect(self._on_orb_clicked)
-        self._set_orb_style('#1e3a5f', '#3b82f6')
+
+        # Set icon.png as orb image
+        import os
+        icon_path = os.path.join(os.path.dirname(__file__), 'icon.png')
+        if os.path.exists(icon_path):
+            from PyQt6.QtGui import QIcon, QPixmap
+            pixmap = QPixmap(icon_path).scaled(
+                self._orb_size - 8,
+                self._orb_size - 8,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            self.orb_btn.setIcon(QIcon(pixmap))
+            self.orb_btn.setIconSize(QSize(self._orb_size - 8, self._orb_size - 8))
+        self._set_orb_style('#111827', '#1e3a5f')
 
         # ── Assemble ───────────────────────────────────────
         main_layout.addWidget(self.panel,   0, Qt.AlignmentFlag.AlignRight)
@@ -368,26 +382,21 @@ class ProactiveBubble(QWidget):
     # ── Orb style ─────────────────────────────────────────────
 
     def _set_orb_style(self, bg: str, border: str, glow: str = ''):
-        glow_style = f'border: 3px solid {glow};' if glow else f'border: 2px solid {border};'
+        border_width = '3px' if glow else '2px'
+        border_color = glow if glow else border
         self.orb_btn.setStyleSheet(f"""
             QPushButton {{
                 background: {bg};
-                {glow_style}
+                border: {border_width} solid {border_color};
                 border-radius: {self._orb_size//2}px;
-                font-size: 22px;
             }}
             QPushButton:hover {{
                 background: #1e3a5f;
                 border: 2px solid #60a5fa;
             }}
         """)
-        # Use icon.png if available, fallback to robot emoji
-        if os.path.exists("icon.png"):
-            self.orb_btn.setIcon(QIcon("icon.png"))
-            self.orb_btn.setIconSize(QSize(self._orb_size - 16, self._orb_size - 16))
-            self.orb_btn.setText("")
-        else:
-            self.orb_btn.setText("🤖")
+        # Use icon.png — no emoji text
+        self.orb_btn.setText("")
 
     # ── State machine ─────────────────────────────────────────
 
@@ -397,39 +406,57 @@ class ProactiveBubble(QWidget):
         if state == self.STATE_IDLE:
             self._pulse_timer.stop()
             self._set_orb_style('#111827', '#1e3a5f')
+            self.orb_btn.setText("🤖")
 
         elif state == self.STATE_PULSING:
             self._pulse_step = 0
+            self._pulse_timer.setInterval(500)
             self._pulse_timer.start()
 
         elif state == self.STATE_ERROR:
             self._pulse_step = 0
+            self._pulse_timer.setInterval(300)  # faster for error
             self._pulse_timer.start()
 
         elif state == self.STATE_EXPANDED:
             self._pulse_timer.stop()
             self._set_orb_style('#1e3a5f', '#3b82f6')
+            self.orb_btn.setText("🤖")
 
     def _pulse_tick(self):
-        """Alternate orb color to signal new suggestion ready."""
         self._pulse_step += 1
 
         if self._state == self.STATE_ERROR:
-            # Fast red pulse for errors
+            # Aggressive red pulse — alternates bright red and dark red
             if self._pulse_step % 2 == 0:
-                self._set_orb_style('#1a0000', '#ef4444')
+                self.orb_btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background: #7f1d1d;
+                        border: 3px solid #ef4444;
+                        border-radius: {self._orb_size//2}px;
+                        font-size: 22px;
+                    }}
+                """)
+                self.orb_btn.setText("🔴")
             else:
-                self._set_orb_style('#3b0000', '#ff0000', glow='#ef4444')
-            # Keep pulsing until dismissed — no timeout for errors
+                self.orb_btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background: #dc2626;
+                        border: 3px solid #fca5a5;
+                        border-radius: {self._orb_size//2}px;
+                        font-size: 22px;
+                    }}
+                """)
+                self.orb_btn.setText("🔴")
+            # Error keeps pulsing until dismissed — no timeout
             return
 
-        # Normal blue pulse
+        # Normal blue pulse — stops after 6 blinks
         if self._pulse_step % 2 == 0:
             self._set_orb_style('#0f172a', '#1d4ed8')
         else:
             self._set_orb_style('#1e3a5f', '#60a5fa', glow='#3b82f6')
 
-        # Stop after 6 blinks if not clicked
         if self._pulse_step >= 12:
             self._set_state(self.STATE_IDLE)
 
@@ -449,11 +476,15 @@ class ProactiveBubble(QWidget):
     # ── Panel render ──────────────────────────────────────────
 
     def show_error_alert(self, data: dict):
-        """Show red pulsing orb for error detection."""
+        """Show red pulsing orb for confirmed errors."""
         self._current_data = data
         self._set_state(self.STATE_ERROR)
-        if self.panel.isVisible():
-            self._render_panel(data)
+        # Auto-expand panel for errors so user sees chips immediately
+        self._render_panel(data)
+        self.panel.show()
+        self.is_expanded = True
+        self.raise_()
+        self.adjustSize()
 
     def _render_panel(self, data: dict):
         if not data:
@@ -468,30 +499,39 @@ class ProactiveBubble(QWidget):
             item = self.chips_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+            elif item.layout():
+                # Clear nested layouts
+                while item.layout().count():
+                    sub = item.layout().takeAt(0)
+                    if sub.widget():
+                        sub.widget().deleteLater()
 
-        # Add chips in rows of 2
         suggestions = data.get('suggestions', [])
+
         i = 0
         while i < len(suggestions):
             row_widget = QWidget()
             row_widget.setStyleSheet("background: transparent; border: none;")
             row_layout = QHBoxLayout(row_widget)
-            row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(6)
+            row_layout.setContentsMargins(0, 2, 0, 2)
+            row_layout.setSpacing(8)
 
-            for j in range(2):  # 2 chips per row
+            for j in range(2):
                 if i >= len(suggestions):
                     row_layout.addStretch()
                     break
+
                 sug   = suggestions[i]
                 label = sug.get('label', '')
                 hint  = sug.get('hint', label)
 
                 chip = QPushButton(label)
                 chip.setCursor(Qt.CursorShape.PointingHandCursor)
-                chip.setMinimumWidth(120)
-                chip.setMaximumWidth(175)
-                chip.setFixedHeight(32)
+                chip.setFixedHeight(34)
+                chip.setSizePolicy(
+                    QSizePolicy.Policy.Expanding,
+                    QSizePolicy.Policy.Fixed,
+                )
                 chip.setStyleSheet("""
                     QPushButton {
                         background: rgba(59,130,246,0.1);
@@ -516,6 +556,9 @@ class ProactiveBubble(QWidget):
                 i += 1
 
             self.chips_layout.addWidget(row_widget)
+
+        # Add spacing after chips
+        self.chips_layout.addSpacing(4)
 
         if hasattr(self, 'ask_input'):
             self.ask_input.clear()
@@ -565,9 +608,11 @@ class ProactiveBubble(QWidget):
             self.adjustSize()
 
     def _on_dismiss(self):
-        self._current_data = None
+        self._current_data         = None
+        self.is_expanded           = False
+        self.is_read_more_expanded = False if hasattr(self, 'is_read_more_expanded') else False
         self.panel.hide()
-        self._set_state(self.STATE_IDLE)
+        self._set_state(self.STATE_IDLE)  # This resets orb color and stops pulse
         self.adjustSize()
         self.dismissed.emit()
 
